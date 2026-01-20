@@ -1,0 +1,149 @@
+import { useState, useEffect } from 'react';
+import { adminAPI } from '../../services/api';
+
+const LiveProjects = () => {
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        loadProjects();
+    }, []);
+
+    const loadProjects = async () => {
+        try {
+            setLoading(true);
+            const response = await adminAPI.getLiveProjects();
+            setProjects(response.data.projects || []);
+        } catch (error) {
+            console.error('Failed to load projects:', error);
+            setError('Failed to load live projects');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCloseProject = async (id) => {
+        const reason = prompt('Enter reason for closing this project:');
+        if (!reason) return;
+
+        try {
+            await adminAPI.closeProject(id, { reason });
+            alert('Project closed successfully!');
+            loadProjects();
+        } catch (error) {
+            console.error('Failed to close project:', error);
+            alert('Failed to close project. Please try again.');
+        }
+    };
+
+    const filteredProjects = projects.filter(project =>
+        project.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.business_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (loading) {
+        return <div className="flex items-center justify-center h-64"><div className="text-xl text-gray-600">Loading...</div></div>;
+    }
+
+    if (error) {
+        return <div className="bg-red-50 border border-red-200 rounded-lg p-4"><p className="text-red-800">{error}</p></div>;
+    }
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-gray-800">Live Projects</h1>
+                <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-semibold shadow-sm">
+                    {filteredProjects.length} Live
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+                <input
+                    type="text"
+                    placeholder="Search by project or business name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
+
+            {filteredProjects.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-md p-12 text-center">
+                    <div className="text-6xl mb-4">🚀</div>
+                    <p className="text-xl text-gray-600">No live projects found</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {filteredProjects.map((project) => (
+                        <div key={project.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 border-green-500">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <h3 className="text-xl font-bold text-gray-800">{project.project_name}</h3>
+                                        <span className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">
+                                            LIVE
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-3">🏢 {project.business_name}</p>
+
+                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                        <div className="bg-blue-50 p-3 rounded-lg">
+                                            <p className="text-xs text-gray-600">Total Capital</p>
+                                            <p className="text-lg font-bold text-blue-600">
+                                                ₹{(project.required_capital / 100000).toFixed(1)}L
+                                            </p>
+                                        </div>
+                                        <div className="bg-green-50 p-3 rounded-lg">
+                                            <p className="text-xs text-gray-600">Raised</p>
+                                            <p className="text-lg font-bold text-green-600">
+                                                ₹{((project.raised_amount || 0) / 100000).toFixed(1)}L
+                                            </p>
+                                        </div>
+                                        <div className="bg-purple-50 p-3 rounded-lg">
+                                            <p className="text-xs text-gray-600">Investors</p>
+                                            <p className="text-lg font-bold text-purple-600">
+                                                {project.investor_count || 0}
+                                            </p>
+                                        </div>
+                                        <div className="bg-orange-50 p-3 rounded-lg">
+                                            <p className="text-xs text-gray-600">Progress</p>
+                                            <p className="text-lg font-bold text-orange-600">
+                                                {Math.round(((project.raised_amount || 0) / project.required_capital) * 100)}%
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div
+                                                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                                style={{ width: `${Math.min(((project.raised_amount || 0) / project.required_capital) * 100, 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="text-sm text-gray-600">
+                                        <p>📍 {project.location}</p>
+                                        <p>📅 Started: {new Date(project.start_date).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => handleCloseProject(project.id)}
+                                className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
+                            >
+                                Close Project
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default LiveProjects;

@@ -1,0 +1,132 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class ApiService {
+  static const String baseUrl = 'http://10.0.2.2:5000/api'; // Android emulator localhost
+  
+  Future<Map<String, String>> _getHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  // Auth
+  Future<Map<String, dynamic>> login(String mobile, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'mobile': mobile, 'password': password}),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Login failed');
+    }
+  }
+
+  Future<Map<String, dynamic>> getProfile() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/auth/profile'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['user'];
+    } else {
+      throw Exception('Failed to get profile');
+    }
+  }
+
+  // Projects
+  Future<List<dynamic>> getProjects() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/investor/projects'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['projects'];
+    } else {
+      throw Exception('Failed to get projects');
+    }
+  }
+
+  Future<Map<String, dynamic>> getProjectDetails(int projectId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/investor/projects/$projectId'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['project'];
+    } else {
+      throw Exception('Failed to get project details');
+    }
+  }
+
+  // Wallet
+  Future<Map<String, dynamic>> getWallet() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/wallet'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to get wallet');
+    }
+  }
+
+  Future<List<dynamic>> getTransactions() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/wallet/transactions'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['transactions'];
+    } else {
+      throw Exception('Failed to get transactions');
+    }
+  }
+
+  // Investment
+  Future<Map<String, dynamic>> buyShares(int projectId, int quantity) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/investor/buy'),
+      headers: await _getHeaders(),
+      body: json.encode({
+        'project_id': projectId,
+        'quantity': quantity,
+        'type': 'SHARE',
+      }),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to buy shares');
+    }
+  }
+
+  // Portfolio
+  Future<List<dynamic>> getMyInvestments() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/investor/investments'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['investments'];
+    } else {
+      throw Exception('Failed to get investments');
+    }
+  }
+}

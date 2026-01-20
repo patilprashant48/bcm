@@ -1,0 +1,412 @@
+const models = require('../database/mongodb-schema');
+const ledgerService = require('../services/ledgerService');
+const emailService = require('../services/emailService');
+const { WALLET_TYPES, PAYMENT_STATUS, REFERENCE_TYPES } = require('../config/constants');
+
+/**
+ * Get user wallets with balances
+ */
+exports.getWallets = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const result = await ledgerService.getUserWallets(userId);
+
+        if (!result.success) {
+            throw new Error(result.error);
+        }
+
+        res.json({
+            success: true,
+            wallets: result.wallets
+        });
+    } catch (error) {
+        console.error('Get wallets error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get wallets',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get wallet balance
+ */
+exports.getWalletBalance = async (req, res) => {
+    try {
+        const { walletType } = req.params;
+        const userId = req.user.id;
+
+        const walletResult = await ledgerService.getWallet(userId, walletType);
+
+        if (!walletResult.success) {
+            throw new Error(walletResult.error);
+        }
+
+        const balanceResult = await ledgerService.getBalance(walletResult.wallet._id);
+
+        if (!balanceResult.success) {
+            throw new Error(balanceResult.error);
+        }
+
+        res.json({
+            success: true,
+            wallet: walletResult.wallet,
+            balance: balanceResult.balance
+        });
+    } catch (error) {
+        console.error('Get wallet balance error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get wallet balance',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get ledger history
+ */
+exports.getLedgerHistory = async (req, res) => {
+    try {
+        const { walletType } = req.params;
+        const { limit = 50, offset = 0 } = req.query;
+        const userId = req.user.id;
+
+        const walletResult = await ledgerService.getWallet(userId, walletType);
+
+        if (!walletResult.success) {
+            throw new Error(walletResult.error);
+        }
+
+        const historyResult = await ledgerService.getLedgerHistory(
+            walletResult.wallet._id,
+            parseInt(limit),
+            parseInt(offset)
+        );
+
+        if (!historyResult.success) {
+            throw new Error(historyResult.error);
+        }
+
+        res.json({
+            success: true,
+            entries: historyResult.entries
+        });
+    } catch (error) {
+        console.error('Get ledger history error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get ledger history',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Request wallet top-up
+ */
+exports.requestTopup = async (req, res) => {
+    try {
+        const { amount, paymentMethod, paymentScreenshotUrl } = req.body;
+        const userId = req.user.id;
+
+        if (!amount || !paymentMethod || !paymentScreenshotUrl) {
+            return res.status(400).json({
+                success: false,
+                message: 'Amount, payment method, and payment screenshot are required'
+            });
+        }
+
+        if (amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Amount must be greater than 0'
+            });
+        }
+
+        // Create payment request
+        const paymentRequest = await models.PaymentRequest.create({
+            userId,
+            amount: parseFloat(amount),
+            paymentMethod,
+            paymentScreenshotUrl,
+            status: PAYMENT_STATUS.PENDING
+        });
+
+        res.json({
+            success: true,
+            message: 'Top-up request submitted successfully',
+            paymentRequest
+        });
+    } catch (error) {
+        console.error('Request topup error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to submit top-up request',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get payment requests (for user)
+ */
+exports.getPaymentRequests = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const requests = await models.PaymentRequest
+            .find({ userId })
+            .sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            requests
+        });
+    } catch (error) {
+        console.error('Get payment requests error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get payment requests',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get all pending payment requests (admin only)
+ */
+exports.getAllPaymentRequests = async (req, res) => {
+    try {
+        const { status = PAYMENT_STATUS.PENDING } = req.query;
+
+        const requests = await models.PaymentRequest
+            .find({ status })
+            .populate('userId', 'email')
+            .sort({ createdAt: -1 });
+
+        // Format response to match frontend expectations
+        const formattedRequests = requests.map(req => ({
+            ...req.toObject(),
+            users: {
+                email: req.userId?.email
+            }
+        }));
+
+        res.json({
+            success: true,
+            requests: formattedRequests
+        });
+    } catch (error) {
+        console.error('Get all payment requests error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get payment requests',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Approve payment request (admin only)
+ */
+exports.approvePayment = async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        const adminId = req.user.id;
+
+        // Get payment request
+        const paymentRequest = await models.PaymentRequest
+            .findById(requestId)
+            .populate('userId', 'email role');
+
+        if (!paymentRequest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Payment request not found'
+            });
+        }
+
+        if (paymentRequest.status !== PAYMENT_STATUS.PENDING) {
+            return res.status(400).json({
+                success: false,
+                message: 'Payment request already processed'
+            });
+        }
+
+        // Get admin wallet
+        const adminWalletResult = await ledgerService.getWallet(adminId, WALLET_TYPES.ADMIN);
+
+        if (!adminWalletResult.success) {
+            throw new Error('Failed to get admin wallet');
+        }
+
+        // Get user wallet based on role
+        const userWalletType = paymentRequest.userId.role === 'BUSINESS_USER'
+            ? WALLET_TYPES.BUSINESS
+            : WALLET_TYPES.INVESTOR_BUSINESS;
+
+        const userWalletResult = await ledgerService.getWallet(
+            paymentRequest.userId._id,
+            userWalletType
+        );
+
+        if (!userWalletResult.success) {
+            throw new Error('Failed to get user wallet');
+        }
+
+        // Debit admin wallet (platform liability)
+        const debitResult = await ledgerService.debitWallet(
+            adminWalletResult.wallet._id,
+            paymentRequest.amount,
+            `Top-up approved for user`,
+            REFERENCE_TYPES.TOPUP,
+            requestId,
+            { user_id: paymentRequest.userId._id },
+            adminId
+        );
+
+        if (!debitResult.success) {
+            return res.status(400).json({
+                success: false,
+                message: debitResult.error
+            });
+        }
+
+        // Credit user wallet
+        const creditResult = await ledgerService.creditWallet(
+            userWalletResult.wallet._id,
+            paymentRequest.amount,
+            'Wallet top-up',
+            REFERENCE_TYPES.TOPUP,
+            requestId,
+            null,
+            adminId
+        );
+
+        if (!creditResult.success) {
+            throw new Error('Failed to credit user wallet');
+        }
+
+        // Update payment request status
+        paymentRequest.status = PAYMENT_STATUS.APPROVED;
+        paymentRequest.adminId = adminId;
+        paymentRequest.processedAt = new Date();
+        await paymentRequest.save();
+
+        // Send email notification
+        await emailService.sendPaymentStatusEmail(
+            paymentRequest.userId.email,
+            paymentRequest.amount,
+            PAYMENT_STATUS.APPROVED
+        );
+
+        res.json({
+            success: true,
+            message: 'Payment approved and wallet credited',
+            newBalance: creditResult.balance
+        });
+    } catch (error) {
+        console.error('Approve payment error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to approve payment',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Reject payment request (admin only)
+ */
+exports.rejectPayment = async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        const { comment } = req.body;
+        const adminId = req.user.id;
+
+        // Get payment request
+        const paymentRequest = await models.PaymentRequest
+            .findById(requestId)
+            .populate('userId', 'email');
+
+        if (!paymentRequest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Payment request not found'
+            });
+        }
+
+        if (paymentRequest.status !== PAYMENT_STATUS.PENDING) {
+            return res.status(400).json({
+                success: false,
+                message: 'Payment request already processed'
+            });
+        }
+
+        // Update payment request status
+        paymentRequest.status = PAYMENT_STATUS.REJECTED;
+        paymentRequest.adminId = adminId;
+        paymentRequest.adminComment = comment;
+        paymentRequest.processedAt = new Date();
+        await paymentRequest.save();
+
+        // Send email notification
+        await emailService.sendPaymentStatusEmail(
+            paymentRequest.userId.email,
+            paymentRequest.amount,
+            PAYMENT_STATUS.REJECTED,
+            comment
+        );
+
+        res.json({
+            success: true,
+            message: 'Payment request rejected'
+        });
+    } catch (error) {
+        console.error('Reject payment error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to reject payment',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get platform settings (payment details)
+ */
+exports.getPlatformPaymentDetails = async (req, res) => {
+    try {
+        const settings = await models.PlatformSetting.find({
+            settingKey: {
+                $in: [
+                    'company_bank_name',
+                    'company_account_number',
+                    'company_ifsc',
+                    'company_upi_id',
+                    'company_qr_code_url'
+                ]
+            }
+        });
+
+        const paymentDetails = {};
+        settings.forEach(setting => {
+            paymentDetails[setting.settingKey] = setting.settingValue;
+        });
+
+        res.json({
+            success: true,
+            paymentDetails
+        });
+    } catch (error) {
+        console.error('Get platform payment details error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get payment details',
+            error: error.message
+        });
+    }
+};
