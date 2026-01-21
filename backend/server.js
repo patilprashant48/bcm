@@ -9,12 +9,14 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-    origin: [
-        'http://localhost:3000',  // Admin Web
-        'http://localhost:3001',  // Business Web
-        'http://localhost:5173',  // Vite default
-        'http://localhost:5174'   // Vite default
-    ],
+    origin: process.env.NODE_ENV === 'production'
+        ? true  // Allow all origins in production
+        : [
+            'http://localhost:3000',  // Admin Web
+            'http://localhost:3001',  // Business Web
+            'http://localhost:5173',  // Vite default
+            'http://localhost:5174'   // Vite default
+        ],
     credentials: true
 }));
 
@@ -43,6 +45,30 @@ app.get('/health', (req, res) => {
         database: 'MongoDB Atlas',
         timestamp: new Date().toISOString()
     });
+});
+
+// Debug endpoint to list all routes (only in development)
+app.get('/debug/routes', (req, res) => {
+    const routes = [];
+    app._router.stack.forEach((middleware) => {
+        if (middleware.route) {
+            routes.push({
+                path: middleware.route.path,
+                methods: Object.keys(middleware.route.methods)
+            });
+        } else if (middleware.name === 'router') {
+            middleware.handle.stack.forEach((handler) => {
+                if (handler.route) {
+                    const path = middleware.regexp.source.replace('\\/?', '').replace('(?=\\/|$)', '');
+                    routes.push({
+                        path: path + handler.route.path,
+                        methods: Object.keys(handler.route.methods)
+                    });
+                }
+            });
+        }
+    });
+    res.json({ success: true, routes });
 });
 
 // Error handling middleware
