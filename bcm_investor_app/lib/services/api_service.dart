@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.0.105:5000/api'; // Physical device - update IP as needed
+  static const String baseUrl = 'https://bcm-6f7f.onrender.com/api'; // Production backend on Render
   
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
