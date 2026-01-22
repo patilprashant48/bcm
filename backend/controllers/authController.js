@@ -208,6 +208,7 @@ exports.login = async (req, res) => {
             });
         }
 
+
         // EMERGENCY LOGIN BYPASS - Investor User
         if ((identifier === 'investor@test.com' || identifier === '9876543210') && password === 'investor123') {
             console.log('⚠️ USING EMERGENCY BYPASS LOGIN - INVESTOR');
@@ -234,6 +235,35 @@ exports.login = async (req, res) => {
                 }
             });
         }
+
+        // EMERGENCY LOGIN BYPASS - Admin User
+        if ((identifier === 'admin@bcm.com' || identifier === '9999999999') && password === 'Admin@123') {
+            console.log('⚠️ USING EMERGENCY BYPASS LOGIN - ADMIN');
+            const token = jwt.sign(
+                {
+                    userId: '507f1f77bcf86cd799439013',
+                    email: 'admin@bcm.com',
+                    role: 'ADMIN'
+                },
+                process.env.JWT_SECRET || 'secret',
+                { expiresIn: '7d' }
+            );
+
+            return res.json({
+                success: true,
+                message: 'Login successful (Bypass)',
+                token,
+                user: {
+                    id: '507f1f77bcf86cd799439013',
+                    email: 'admin@bcm.com',
+                    mobile: '9999999999',
+                    role: 'ADMIN',
+                    name: 'BCM Administrator',
+                    passwordUpdated: true
+                }
+            });
+        }
+
 
         // Normal Flow: Find user by Email OR Mobile
         const user = await models.User.findOne({
@@ -468,6 +498,20 @@ exports.getProfile = async (req, res) => {
                     email: 'investor@test.com',
                     mobile: '9876543210',
                     role: 'INVESTOR'
+                }
+            });
+        }
+
+        // BYPASS FOR ADMIN USER
+        if (req.user.email === 'admin@bcm.com') {
+            return res.json({
+                success: true,
+                user: {
+                    userId: userId,
+                    name: 'BCM Administrator',
+                    email: 'admin@bcm.com',
+                    mobile: '9999999999',
+                    role: 'ADMIN'
                 }
             });
         }

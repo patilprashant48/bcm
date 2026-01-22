@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
+import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -16,11 +17,24 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Debug: Print API URL
+    print('🔗 API Base URL: ${ApiService.baseUrl}');
+  }
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    print('🔐 Attempting login for: ${_mobileController.text}');
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.login(
@@ -31,10 +45,14 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (!success && mounted) {
+      setState(() {
+        _errorMessage = 'Login failed. Check credentials and internet connection.';
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login failed. Please check your credentials.'),
+        SnackBar(
+          content: Text(_errorMessage),
           backgroundColor: AppTheme.errorColor,
+          duration: Duration(seconds: 5),
         ),
       );
     }

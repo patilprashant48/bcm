@@ -19,11 +19,13 @@ const authenticateToken = async (req, res, next) => {
         // Verify JWT token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // BYPASS FOR TEST USERS (Business and Investor)
+        // BYPASS FOR TEST USERS (Business, Investor, and Admin)
         if (decoded.email === 'business@test.com' ||
             decoded.email === 'investor@test.com' ||
+            decoded.email === 'admin@bcm.com' ||
             decoded.userId === '507f1f77bcf86cd799439011' ||
-            decoded.userId === '507f1f77bcf86cd799439012') {
+            decoded.userId === '507f1f77bcf86cd799439012' ||
+            decoded.userId === '507f1f77bcf86cd799439013') {
             req.user = {
                 id: decoded.userId,
                 email: decoded.email,

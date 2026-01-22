@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { isBusinessUser } = require('../middleware/roleCheck');
+const projectController = require('../controllers/projectController');
 
 // Business onboarding routes
 router.post('/onboarding/personal', authenticateToken, isBusinessUser, async (req, res) => {
@@ -38,5 +39,12 @@ router.get('/approval-status', authenticateToken, isBusinessUser, async (req, re
     // TODO: Get approval status
     res.json({ success: true, status: 'NEW' });
 });
+
+// Project routes for business users
+router.post('/projects', authenticateToken, isBusinessUser, projectController.createProject);
+router.get('/projects', authenticateToken, isBusinessUser, projectController.getMyProjects);
+router.get('/projects/:id', authenticateToken, isBusinessUser, projectController.getProjectById);
+router.put('/projects/:id', authenticateToken, isBusinessUser, projectController.updateProject);
+router.delete('/projects/:id', authenticateToken, isBusinessUser, projectController.deleteProject);
 
 module.exports = router;
