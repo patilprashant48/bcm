@@ -1,5 +1,5 @@
-const Project = require('../models/Project');
-const User = require('../models/User');
+const models = require('../database/mongodb-schema');
+const Project = models.Project;
 
 /**
  * Create a new project
@@ -21,27 +21,25 @@ exports.createProject = async (req, res) => {
 
         // Validate required fields
         if (!project_name || !description || !project_type || !required_capital ||
-            !expected_roi || !duration_months || !location || !start_date || !business_plan) {
+            !location || !start_date) {
             return res.status(400).json({
                 success: false,
                 message: 'All required fields must be provided'
             });
         }
 
-        // Create project
+        // Map frontend fields to schema fields
         const project = new Project({
-            business_id: req.user.id,
-            project_name,
-            description,
-            project_type,
-            required_capital: parseFloat(required_capital),
-            expected_roi: parseFloat(expected_roi),
-            duration_months: parseInt(duration_months),
-            location,
-            start_date: new Date(start_date),
-            business_plan,
-            risk_factors: risk_factors || '',
-            status: 'PENDING_APPROVAL'
+            userId: req.user.id,
+            projectName: project_name,
+            description: description,
+            projectType: project_type.toUpperCase(), // SERVICE, TRADING, PRODUCTION
+            category: 'OFFLINE', // Default, can be made dynamic
+            requiredCapital: parseFloat(required_capital),
+            projectCost: parseFloat(required_capital), // Using same value for now
+            location: location,
+            startDate: new Date(start_date),
+            status: 'NEW' // Use 'NEW' instead of 'PENDING_APPROVAL'
         });
 
         await project.save();
@@ -51,10 +49,10 @@ exports.createProject = async (req, res) => {
             message: 'Project created successfully and submitted for approval',
             project: {
                 id: project._id,
-                project_name: project.project_name,
+                project_name: project.projectName,
                 status: project.status,
-                required_capital: project.required_capital,
-                created_at: project.created_at
+                required_capital: project.requiredCapital,
+                created_at: project.createdAt
             }
         });
     } catch (error) {
@@ -72,26 +70,25 @@ exports.createProject = async (req, res) => {
  */
 exports.getMyProjects = async (req, res) => {
     try {
-        const projects = await Project.find({ business_id: req.user.id })
-            .sort({ created_at: -1 })
+        const projects = await Project.find({ userId: req.user.id })
+            .sort({ createdAt: -1 })
             .select('-__v');
 
         res.json({
             success: true,
             projects: projects.map(project => ({
                 id: project._id,
-                project_name: project.project_name,
+                project_name: project.projectName,
                 description: project.description,
-                project_type: project.project_type,
-                required_capital: project.required_capital,
-                raised_capital: project.raised_capital,
-                expected_roi: project.expected_roi,
-                duration_months: project.duration_months,
+                project_type: project.projectType,
+                category: project.category,
+                required_capital: project.requiredCapital,
+                project_cost: project.projectCost,
                 location: project.location,
-                start_date: project.start_date,
+                start_date: project.startDate,
                 status: project.status,
-                created_at: project.created_at,
-                updated_at: project.updated_at
+                created_at: project.createdAt,
+                updated_at: project.updatedAt
             }))
         });
     } catch (error) {
@@ -111,7 +108,7 @@ exports.getProjectById = async (req, res) => {
     try {
         const project = await Project.findOne({
             _id: req.params.id,
-            business_id: req.user.id
+            userId: req.user.id
         }).select('-__v');
 
         if (!project) {
@@ -125,21 +122,17 @@ exports.getProjectById = async (req, res) => {
             success: true,
             project: {
                 id: project._id,
-                project_name: project.project_name,
+                project_name: project.projectName,
                 description: project.description,
-                project_type: project.project_type,
-                required_capital: project.required_capital,
-                raised_capital: project.raised_capital,
-                expected_roi: project.expected_roi,
-                duration_months: project.duration_months,
+                project_type: project.projectType,
+                category: project.category,
+                required_capital: project.requiredCapital,
+                project_cost: project.projectCost,
                 location: project.location,
-                start_date: project.start_date,
-                business_plan: project.business_plan,
-                risk_factors: project.risk_factors,
+                start_date: project.startDate,
                 status: project.status,
-                admin_notes: project.admin_notes,
-                created_at: project.created_at,
-                updated_at: project.updated_at
+                created_at: project.createdAt,
+                updated_at: project.updatedAt
             }
         });
     } catch (error) {
@@ -159,7 +152,7 @@ exports.updateProject = async (req, res) => {
     try {
         const project = await Project.findOne({
             _id: req.params.id,
-            business_id: req.user.id
+            userId: req.user.id
         });
 
         if (!project) {
