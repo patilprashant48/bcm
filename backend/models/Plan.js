@@ -44,4 +44,4 @@ const planSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Plan', planSchema);
+module.exports = mongoose.models.Plan || mongoose.model('Plan', planSchema);

@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     },
     user_type: {
         type: String,
-        enum: ['ADMIN', 'BUSINESS', 'INVESTOR'],
+        enum: ["ADMIN", "BUSINESS", "INVESTOR"],
         required: true
     },
     name: {
@@ -27,27 +27,22 @@ const userSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED'],
-        default: 'ACTIVE'
+        enum: ["ACTIVE", "INACTIVE", "SUSPENDED"],
+        default: "ACTIVE"
     },
     requires_password_update: {
         type: Boolean,
         default: false
-    },
-    created_at: {
-        type: Date,
-        default: Date.now
-    },
-    updated_at: {
-        type: Date,
-        default: Date.now
     }
+}, {
+    timestamps: true
 });
 
-// Update timestamp on save
-userSchema.pre('save', function (next) {
-    this.updated_at = Date.now();
-    next();
-});
+/**
+ * ✅ HARD LOCK – prevents overwrite in ALL cases
+ */
+const User =
+    mongoose.models.User ||
+    mongoose.model("User", UserSchema);
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = User;
