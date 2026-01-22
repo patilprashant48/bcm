@@ -91,6 +91,8 @@ const projectSchema = new mongoose.Schema({
 projectSchema.index({ business_id: 1, status: 1 });
 projectSchema.index({ status: 1, created_at: -1 });
 
-const Project = mongoose.model('Project', projectSchema);
+// Check if model exists before creating to avoid OverwriteModelError
+const Project = mongoose.models.Project || mongoose.model('Project', projectSchema);
 
 module.exports = Project;
+
