@@ -179,7 +179,7 @@ const projectSchema = new mongoose.Schema({
     startDate: { type: Date, required: true },
     location: { type: String, required: true },
     category: { type: String, enum: ['ONLINE', 'OFFLINE'], required: true },
-    projectType: { type: String, enum: ['SERVICE', 'TRADING', 'PRODUCTION'], required: true },
+    projectType: { type: String, enum: ['SERVICE', 'TRADING', 'PRODUCTION', 'BUSINESS_EXPANSION', 'NEW_VENTURE', 'PRODUCT_LAUNCH', 'INFRASTRUCTURE', 'TECHNOLOGY', 'OTHER'], required: true },
     projectCost: { type: Number, required: true },
     requiredCapital: { type: Number, required: true },
     description: { type: String },

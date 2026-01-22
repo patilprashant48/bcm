@@ -33,7 +33,7 @@ exports.createProject = async (req, res) => {
             userId: req.user.id,
             projectName: project_name,
             description: description,
-            projectType: project_type.toUpperCase(), // SERVICE, TRADING, PRODUCTION
+            projectType: project_type, // Frontend sends correct enum value
             category: 'OFFLINE', // Default, can be made dynamic
             requiredCapital: parseFloat(required_capital),
             projectCost: parseFloat(required_capital), // Using same value for now
