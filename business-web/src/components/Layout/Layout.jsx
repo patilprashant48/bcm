@@ -9,12 +9,12 @@ const Layout = () => {
 
     const navigation = [
         { name: 'Dashboard', path: '/', icon: '📊' },
-        { name: 'My Projects', path: '/projects', icon: '📁' },
-        { name: 'Create Project', path: '/projects/create', icon: '➕' },
-        { name: 'Wallet', path: '/wallet', icon: '💰' },
-        { name: 'Capital Tools', path: '/capital', icon: '💼' },
-        { name: 'Plans', path: '/plans', icon: '📋' },
         { name: 'Profile', path: '/profile', icon: '👤' },
+        { name: 'Plan Activation', path: '/plans', icon: '📋' },
+        { name: 'Create Project', path: '/projects/create', icon: '➕' },
+        { name: 'My Projects', path: '/projects', icon: '📁' },
+        { name: 'Wallet Topup', path: '/wallet', icon: '💰' },
+        { name: 'Legal Docs', path: '/legal', icon: '⚖️' },
     ];
 
     const isActive = (path) => {
@@ -42,19 +42,28 @@ const Layout = () => {
 
                     {/* Navigation */}
                     <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                        {navigation.map((item) => (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={`flex items-center px-4 py-3 rounded-lg transition-all duration-200 ${isActive(item.path)
-                                    ? 'bg-blue-50 text-blue-600 font-medium shadow-sm'
-                                    : 'text-gray-700 hover:bg-gray-50'
-                                    }`}
-                            >
-                                <span className="text-xl mr-3">{item.icon}</span>
-                                {item.name}
-                            </Link>
-                        ))}
+                        {navigation.map((item) => {
+                            const isLocked = user?.business_activation_status !== 'ACTIVE' &&
+                                item.path !== '/' &&
+                                item.path !== '/profile';
+
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={isLocked ? '#' : item.path}
+                                    onClick={(e) => isLocked && e.preventDefault()}
+                                    className={`flex items-center px-4 py-3 rounded-lg transition-all duration-200 ${isActive(item.path)
+                                        ? 'bg-blue-50 text-blue-600 font-medium shadow-sm'
+                                        : 'text-gray-700 hover:bg-gray-50'
+                                        } ${isLocked ? 'opacity-60 cursor-not-allowed group' : ''}`}
+                                    title={isLocked ? "Complete profile and wait for admin approval" : ""}
+                                >
+                                    <span className="text-xl mr-3">{item.icon}</span>
+                                    <span className="flex-1">{item.name}</span>
+                                    {isLocked && <span className="text-sm">🔒</span>}
+                                </Link>
+                            );
+                        })}
                     </nav>
 
                     {/* User Info */}

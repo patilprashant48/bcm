@@ -687,13 +687,20 @@ exports.getProfile = async (req, res) => {
 
         const profile = await models.UserProfile.findOne({ userId });
 
+        let businessStatus = null;
+        if (req.user.role === 'BUSINESS_USER') {
+            const business = await models.BusinessProfile.findOne({ userId });
+            businessStatus = business?.approvalStatus || 'NEW';
+        }
+
         res.json({
             success: true,
             user: {
                 ...profile?.toObject(),
                 email: req.user.email,
                 mobile: req.user.mobile,
-                role: req.user.role
+                role: req.user.role,
+                business_activation_status: businessStatus
             }
         });
     } catch (error) {

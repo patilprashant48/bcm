@@ -58,6 +58,30 @@ const Dashboard = () => {
                     Welcome back, {user?.business_name || user?.owner_name || 'Business Owner'}!
                 </h1>
                 <p className="text-gray-600 mt-2">Here's what's happening with your business today.</p>
+
+                {user?.business_activation_status !== 'ACTIVE' && (
+                    <div className="mt-6 bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-lg shadow-sm">
+                        <div className="flex items-start">
+                            <div className="text-3xl mr-4">🔒</div>
+                            <div>
+                                <h3 className="text-lg font-bold text-orange-800 mb-1">
+                                    Account Pending Approval
+                                </h3>
+                                <p className="text-orange-700">
+                                    Your business account is currently <strong>{user?.business_activation_status || 'Under Review'}</strong>.
+                                    Please complete your profile details to submit your application for admin approval.
+                                    Access to Create Projects, Wallet, and Capital Tools is restricted until approved.
+                                </p>
+                                <Link
+                                    to="/profile"
+                                    className="inline-block mt-3 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+                                >
+                                    Complete Profile →
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Stats Grid */}

@@ -15,6 +15,7 @@ exports.submitOnboarding = async (req, res) => {
         if (business) {
             // Update existing
             Object.assign(business, businessData);
+            business.activationStatus = 'PENDING'; // Force re-approval on update
         } else {
             // Create new
             business = new Business({

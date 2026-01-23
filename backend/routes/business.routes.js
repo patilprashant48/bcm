@@ -8,6 +8,7 @@ const businessController = require('../controllers/businessController');
 // Business onboarding routes
 router.post('/onboarding', authenticateToken, isBusinessUser, businessController.submitOnboarding);
 router.get('/profile', authenticateToken, isBusinessUser, businessController.getProfile);
+router.put('/profile', authenticateToken, isBusinessUser, businessController.submitOnboarding);
 router.get('/approval-status', authenticateToken, isBusinessUser, businessController.getApprovalStatus);
 router.get('/dashboard/stats', authenticateToken, isBusinessUser, businessController.getDashboardStats);
 
