@@ -2,32 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
-import '../../services/api_service.dart';
-import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
   String _errorMessage = '';
 
-  @override
-  void initState() {
-    super.initState();
-    // Debug: Print API URL
-    print('🔗 API Base URL: ${ApiService.baseUrl}');
-  }
-
-  Future<void> _handleLogin() async {
+  Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -35,34 +28,55 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = '';
     });
 
-    print('🔐 Attempting login for: ${_mobileController.text}');
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.login(
+    final success = await authProvider.register(
+      _nameController.text,
+      _emailController.text,
       _mobileController.text,
       _passwordController.text,
     );
 
     setState(() => _isLoading = false);
 
-    if (!success && mounted) {
-      setState(() {
-        _errorMessage = 'Login failed. Check credentials and internet connection.';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_errorMessage),
-          backgroundColor: AppTheme.errorColor,
-          duration: Duration(seconds: 5),
-        ),
-      );
+    if (success) {
+      if (mounted) {
+        // Pop register screen as auth state change will handle navigation in main.dart
+        // But main.dart handles isAuthenticated -> HomeScreen.
+        // If we are here, we are authenticated now.
+        // Just let main.dart handle it?
+        // Usually Navigator.pop(context) if this was pushed.
+        
+        // Wait, AuthProvider will notify listeners, MainScreen should rebuild.
+        // But if this screen was pushed onto stack, popping it might be cleaner if main screen is behind it?
+        // However, main.dart usually switches between LoginScreen and MainScreen based on auth state.
+        
+        Navigator.pop(context); 
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Registration failed. Try different email/mobile.';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Register'),
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+      ),
       body: Container(
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -82,25 +96,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Icon(
-                        Icons.trending_up,
-                        size: 60,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    
                     // Title
                     const Text(
-                      'BCM Investor',
+                      'Create Account',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -109,14 +107,55 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Invest in the future',
+                      'Start your investment journey',
                       style: TextStyle(
                         fontSize: 16,
                         color: AppTheme.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
                     
+                    // Name Field
+                    TextFormField(
+                      controller: _nameController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                        prefixIcon: const Icon(Icons.person, color: AppTheme.textSecondary),
+                        filled: true,
+                        fillColor: AppTheme.surfaceColor,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Email Field
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                        prefixIcon: const Icon(Icons.email, color: AppTheme.textSecondary),
+                        filled: true,
+                        fillColor: AppTheme.surfaceColor,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     // Mobile Number Field
                     TextFormField(
                       controller: _mobileController,
@@ -161,41 +200,39 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return 'Please enter a password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 32),
                     
-                    // Login Button
+                    // Register Button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
+                        onPressed: _isLoading ? null : _handleRegister,
                         child: _isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
                             : const Text(
-                                'Login',
+                                'Register',
                                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                       ),
                     ),
                     const SizedBox(height: 16),
                     
-                    // Register Link
+                    // Login Link
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
+                        Navigator.pop(context);
                       },
                       child: const Text(
-                        'Don\'t have an account? Register',
+                        'Already have an account? Login',
                         style: TextStyle(color: AppTheme.textSecondary),
                       ),
                     ),
@@ -211,6 +248,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
     _mobileController.dispose();
     _passwordController.dispose();
     super.dispose();

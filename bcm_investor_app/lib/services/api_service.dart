@@ -39,6 +39,33 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> register(String name, String email, String mobile, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/register-simple'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'name': name,
+          'email': email,
+          'mobile': mobile,
+          'password': password,
+          'role': 'INVESTOR'
+        }),
+      );
+      
+      print('Register response status: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Registration failed');
+      }
+    } catch (e) {
+      throw Exception('Registration failed: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> getProfile() async {
     final response = await http.get(
       Uri.parse('$baseUrl/auth/profile'),

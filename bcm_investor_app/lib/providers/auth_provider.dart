@@ -54,6 +54,26 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> register(String name, String email, String mobile, String password) async {
+    try {
+      final response = await _apiService.register(name, email, mobile, password);
+      final token = response['token'];
+      final userData = response['user'];
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      
+      _user = userData;
+      _isAuthenticated = true;
+      notifyListeners();
+      
+      return true;
+    } catch (e) {
+      print('Registration provider error: $e');
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');

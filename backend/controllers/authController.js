@@ -31,6 +31,94 @@ const generateOTP = () => {
 const otpStore = new Map();
 
 /**
+ * Register new user (Simple - No OTP)
+ */
+exports.registerSimple = async (req, res) => {
+    try {
+        const { email, mobile, password, name, role = ROLES.INVESTOR } = req.body;
+
+        if (!email || !mobile || !password || !name) {
+            return res.status(400).json({
+                success: false,
+                message: 'All fields are required'
+            });
+        }
+
+        // Check if user already exists
+        const existingUser = await models.User.findOne({
+            $or: [{ email }, { mobile }]
+        });
+
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'User already exists with this email or mobile'
+            });
+        }
+
+        // Validate password
+        if (!PASSWORD_REGEX.test(password)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters with uppercase, lowercase, number, and special character'
+            });
+        }
+
+        // Hash password
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        // Create user
+        const user = await models.User.create({
+            email,
+            mobile,
+            password: passwordHash, // Store hashed password directly
+            user_type: role, // Using user_type as per model
+            role: role, // Keeping role for compatibility if needed
+            name,
+            passwordUpdated: true,
+            status: 'ACTIVE'
+        });
+
+        // Create user profile
+        await models.UserProfile.create({
+            userId: user._id,
+            fullName: name
+        });
+
+        // Create wallet based on role
+        if (role === ROLES.INVESTOR) {
+            await ledgerService.createWallet(user._id, WALLET_TYPES.INVESTOR_BUSINESS);
+            await ledgerService.createWallet(user._id, WALLET_TYPES.INVESTOR_INCOME);
+        } else if (role === ROLES.BUSINESS_USER) {
+            await ledgerService.createWallet(user._id, WALLET_TYPES.BUSINESS);
+        }
+
+        // Generate token
+        const token = generateToken(user);
+
+        res.json({
+            success: true,
+            message: 'Registration successful',
+            token,
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name,
+                role: user.user_type,
+                mobile: user.mobile
+            }
+        });
+    } catch (error) {
+        console.error('Register simple error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Registration failed',
+            error: error.message
+        });
+    }
+};
+
+/**
  * Register new user
  */
 exports.register = async (req, res) => {
