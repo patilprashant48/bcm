@@ -55,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } else {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Registration failed. Try different email/mobile.';
+          _errorMessage = authProvider.lastError ?? 'Registration failed. Try different email/mobile.';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -202,8 +202,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter a password';
                         }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                        if (value.length < 8) {
+                          return 'Password must be at least 8 characters';
+                        }
+                        String pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$';
+                        RegExp regex = RegExp(pattern);
+                        if (!regex.hasMatch(value)) {
+                          return 'Must include A-Z, a-z, 0-9, and special character';
                         }
                         return null;
                       },

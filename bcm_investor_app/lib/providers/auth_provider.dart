@@ -35,7 +35,11 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  String? _lastError;
+  String? get lastError => _lastError;
+
   Future<bool> login(String mobile, String password) async {
+    _lastError = null;
     try {
       final response = await _apiService.login(mobile, password);
       final token = response['token'];
@@ -50,11 +54,13 @@ class AuthProvider with ChangeNotifier {
       
       return true;
     } catch (e) {
+      _lastError = e.toString().replaceAll('Exception: ', '');
       return false;
     }
   }
 
   Future<bool> register(String name, String email, String mobile, String password) async {
+    _lastError = null;
     try {
       final response = await _apiService.register(name, email, mobile, password);
       final token = response['token'];
@@ -70,6 +76,7 @@ class AuthProvider with ChangeNotifier {
       return true;
     } catch (e) {
       print('Registration provider error: $e');
+      _lastError = e.toString().replaceAll('Exception: ', '');
       return false;
     }
   }
