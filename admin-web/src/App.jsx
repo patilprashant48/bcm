@@ -32,12 +32,22 @@ import PlatformSettings from './pages/Settings/PlatformSettings';
 // Capital Tools
 import ShareManagement from './pages/Capital/ShareManagement';
 import LoanManagement from './pages/Capital/LoanManagement';
+import FixedDeposits from './pages/Capital/FixedDeposits';
+import Partnerships from './pages/Capital/Partnerships';
 
 // Reports
 import TransactionReports from './pages/Reports/TransactionReports';
+import UserActivity from './pages/Reports/UserActivity';
+import RevenueReports from './pages/Reports/RevenueReports';
 
 // Content
 import Notifications from './pages/Content/Notifications';
+import Announcements from './pages/Content/Announcements';
+import Banners from './pages/Content/Banners';
+
+// Documents
+import LegalTemplates from './pages/Documents/LegalTemplates';
+import GeneratedDocs from './pages/Documents/GeneratedDocs';
 
 // Settings & Security
 import AdminManagement from './pages/Settings/AdminManagement';
@@ -127,12 +137,22 @@ const AppRoutes = () => {
                 {/* Capital Tools */}
                 <Route path="capital/shares" element={<ShareManagement />} />
                 <Route path="capital/loans" element={<LoanManagement />} />
+                <Route path="capital/fds" element={<FixedDeposits />} />
+                <Route path="capital/partnerships" element={<Partnerships />} />
 
                 {/* Reports */}
                 <Route path="reports/transactions" element={<TransactionReports />} />
+                <Route path="reports/activity" element={<UserActivity />} />
+                <Route path="reports/revenue" element={<RevenueReports />} />
 
                 {/* Content */}
                 <Route path="content/notifications" element={<Notifications />} />
+                <Route path="content/announcements" element={<Announcements />} />
+                <Route path="content/banners" element={<Banners />} />
+
+                {/* Documents */}
+                <Route path="documents/templates" element={<LegalTemplates />} />
+                <Route path="documents/generated" element={<GeneratedDocs />} />
 
                 {/* Admin & Security */}
                 <Route path="settings/admins" element={<AdminManagement />} />

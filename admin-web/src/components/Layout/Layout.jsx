@@ -109,7 +109,7 @@ const Layout = () => {
                 { name: 'Plans', path: '/plans', icon: '📋' },
                 { name: 'Platform Settings', path: '/settings', icon: '🔧' },
                 { name: 'Admin Management', path: '/settings/admins', icon: '👨‍💼' },
-                { name: 'Audit Logs', path: '/settings/audit', icon: '📝' },
+                { name: 'Audit Logs', path: '/settings/audit-logs', icon: '📝' },
             ]
         }
     ];
