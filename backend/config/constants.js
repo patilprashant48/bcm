@@ -80,7 +80,7 @@ module.exports = {
     },
 
     // Password Validation
-    PASSWORD_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+    PASSWORD_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
 
     // File Upload
     ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/jpg'],

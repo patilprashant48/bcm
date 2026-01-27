@@ -58,6 +58,21 @@ export const AuthProvider = ({ children }) => {
         setRequiresOnboarding(false);
     };
 
+    const register = async (userData) => {
+        const response = await authAPI.register(userData);
+        const { token, user } = response.data;
+
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        setUser(user);
+        setIsAuthenticated(true);
+        // New users need onboarding profile setup
+        setRequiresOnboarding(true);
+
+        return user;
+    };
+
     const updateUser = (userData) => {
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
@@ -70,6 +85,7 @@ export const AuthProvider = ({ children }) => {
             isAuthenticated,
             requiresOnboarding,
             login,
+            register,
             logout,
             checkAuth,
             updateUser
