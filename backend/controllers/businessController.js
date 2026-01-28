@@ -15,13 +15,13 @@ exports.submitOnboarding = async (req, res) => {
         if (business) {
             // Update existing
             Object.assign(business, businessData);
-            business.activationStatus = 'PENDING'; // Force re-approval on update
+            business.approvalStatus = 'NEW'; // Force re-approval on update
         } else {
             // Create new
             business = new Business({
                 userId: req.user.id,
                 ...businessData,
-                activationStatus: 'PENDING',
+                approvalStatus: 'NEW',
                 status: 'ACTIVE'
             });
         }
@@ -33,7 +33,7 @@ exports.submitOnboarding = async (req, res) => {
             message: 'Business profile submitted for approval',
             business: {
                 id: business._id,
-                status: business.activationStatus
+                status: business.approvalStatus
             }
         });
     } catch (error) {
@@ -81,7 +81,7 @@ exports.getProfile = async (req, res) => {
                 account_number: business.accountNumber,
                 ifsc_code: business.ifscCode,
                 status: business.status,
-                activation_status: business.activationStatus,
+                approval_status: business.approvalStatus,
                 created_at: business.createdAt
             }
         });
@@ -111,7 +111,7 @@ exports.getApprovalStatus = async (req, res) => {
 
         res.json({
             success: true,
-            status: business.activationStatus || 'PENDING'
+            status: business.approvalStatus || 'NEW'
         });
     } catch (error) {
         console.error('Get approval status error:', error);

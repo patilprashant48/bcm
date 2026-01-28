@@ -61,10 +61,10 @@ export const adminAPI = {
     getDashboardStats: () => api.get('/admin/dashboard/stats'),
 
     // Businesses
-    getNewBusinesses: () => api.get('/admin/businesses/new'),
-    getRecheckBusinesses: () => api.get('/admin/businesses/recheck'),
-    getActiveBusinesses: () => api.get('/admin/businesses/active'),
-    getInactiveBusinesses: () => api.get('/admin/businesses/inactive'),
+    getNewBusinesses: () => api.get('/admin/businesses', { params: { status: 'NEW' } }),
+    getRecheckBusinesses: () => api.get('/admin/businesses', { params: { status: 'RECHECK' } }),
+    getActiveBusinesses: () => api.get('/admin/businesses', { params: { status: 'ACTIVE' } }),
+    getInactiveBusinesses: () => api.get('/admin/businesses', { params: { status: 'INACTIVE' } }),
     getBusinessDetails: (id) => api.get(`/admin/businesses/${id}`),
     approveBusinessActivation: (id, data) => api.post(`/admin/businesses/${id}/approve`, data),
     recheckBusinessActivation: (id, data) => api.post(`/admin/businesses/${id}/recheck`, data),

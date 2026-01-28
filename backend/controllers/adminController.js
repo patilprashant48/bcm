@@ -172,7 +172,7 @@ exports.getBusinesses = async (req, res) => {
 
         const filter = {};
         if (status) {
-            filter.activationStatus = status;
+            filter.approvalStatus = status;
         }
 
         const businesses = await Business.find(filter)
@@ -185,12 +185,18 @@ exports.getBusinesses = async (req, res) => {
                 id: business._id,
                 business_name: business.businessName,
                 business_type: business.businessType,
+                business_model: business.businessModel, // Added
+                owner_name: business.contactPerson || business.userId?.name || 'N/A', // Mapped to owner_name
+                email: business.contactEmail || business.userId?.email || 'N/A', // Mapped to email
+                mobile: business.contactMobile || business.userId?.mobile || 'N/A', // Mapped to mobile
+                pan_number: business.pan, // Mapped to pan_number
+                gst_number: business.gst, // Mapped to gst_number
                 contact_person: business.contactPerson,
                 contact_email: business.contactEmail,
                 contact_mobile: business.contactMobile,
                 city: business.city,
                 state: business.state,
-                activation_status: business.activationStatus,
+                approval_status: business.approvalStatus,
                 created_at: business.createdAt
             }))
         });
@@ -217,7 +223,7 @@ exports.approveBusiness = async (req, res) => {
             });
         }
 
-        business.activationStatus = 'APPROVED';
+        business.approvalStatus = 'ACTIVE';
         await business.save();
 
         res.json({
@@ -248,7 +254,7 @@ exports.rejectBusiness = async (req, res) => {
             });
         }
 
-        business.activationStatus = 'REJECTED';
+        business.approvalStatus = 'REJECTED';
         await business.save();
 
         res.json({
@@ -279,7 +285,7 @@ exports.recheckBusiness = async (req, res) => {
             });
         }
 
-        business.activationStatus = 'RECHECK';
+        business.approvalStatus = 'RECHECK';
         await business.save();
 
         res.json({
@@ -312,8 +318,8 @@ exports.getDashboardStats = async (req, res) => {
         const investors = await User.countDocuments({ role: 'INVESTOR' });
 
         const totalBusinesses = await Business.countDocuments();
-        const pendingBusinesses = await Business.countDocuments({ activationStatus: 'PENDING' });
-        const approvedBusinesses = await Business.countDocuments({ activationStatus: 'APPROVED' });
+        const pendingBusinesses = await Business.countDocuments({ approvalStatus: 'NEW' });
+        const approvedBusinesses = await Business.countDocuments({ approvalStatus: 'ACTIVE' });
 
         res.json({
             success: true,

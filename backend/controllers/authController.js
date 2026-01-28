@@ -95,6 +95,12 @@ exports.registerSimple = async (req, res) => {
             await ledgerService.createWallet(user._id, WALLET_TYPES.INVESTOR_INCOME);
         } else if (role === ROLES.BUSINESS_USER) {
             await ledgerService.createWallet(user._id, WALLET_TYPES.BUSINESS);
+
+            // Create Business Profile (PENDING APPROVAL)
+            await models.BusinessProfile.create({
+                userId: user._id,
+                approvalStatus: 'NEW'
+            });
         }
 
         // Generate token

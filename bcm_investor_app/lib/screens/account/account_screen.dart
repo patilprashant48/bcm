@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import 'profile_details_screen.dart';
+import 'transaction_history_screen.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({Key? key}) : super(key: key);
@@ -20,52 +22,60 @@ class AccountScreen extends StatelessWidget {
         child: Column(
           children: [
             // Profile Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.primaryColor.withOpacity(0.7),
-                          ],
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileDetailsScreen()),
+                );
+              },
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.primaryColor,
+                              AppTheme.primaryColor.withOpacity(0.7),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(40),
                         ),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      child: Center(
-                        child: Text(
-                          (user?['name'] ?? user?['mobile'] ?? 'U')[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Text(
+                            (user?['name'] ?? user?['mobile'] ?? 'U')[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      user?['name'] ?? 'User',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                      const SizedBox(height: 16),
+                      Text(
+                        user?['name'] ?? 'User',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user?['mobile'] ?? user?['email'] ?? '',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 14,
+                      const SizedBox(height: 4),
+                      Text(
+                        user?['mobile'] ?? user?['email'] ?? '',
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -75,33 +85,79 @@ class AccountScreen extends StatelessWidget {
             // Menu Items
             _buildMenuItem(
               icon: Icons.person,
-              title: 'Profile',
-              onTap: () {},
+              title: 'Profile Details',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileDetailsScreen()),
+                );
+              },
             ),
             _buildMenuItem(
               icon: Icons.history,
               title: 'Transaction History',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TransactionHistoryScreen()),
+                );
+              },
             ),
             _buildMenuItem(
               icon: Icons.bookmark,
               title: 'Watchlist',
-              onTap: () {},
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Watchlist feature coming soon!')),
+                );
+              },
             ),
             _buildMenuItem(
               icon: Icons.settings,
               title: 'Settings',
-              onTap: () {},
+              onTap: () {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Settings feature coming soon!')),
+                );
+              },
             ),
             _buildMenuItem(
               icon: Icons.help,
               title: 'Help & Support',
-              onTap: () {},
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Help & Support'),
+                    content: const Text('For support, please email us at:\nsupport@bcm.com\n\nOr call: +91 1234567890'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             _buildMenuItem(
               icon: Icons.info,
               title: 'About',
-              onTap: () {},
+              onTap: () {
+                 showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('About BCM'),
+                    content: const Text('Business Capital Management (BCM) Platform.\nVersion 1.0.0\n\n© 2026 BCM Inc.'),
+                     actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             
             const SizedBox(height: 24),
