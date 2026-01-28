@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
+import '../screens/home/project_details_screen.dart';
 
 class ProjectCard extends StatelessWidget {
   final Map<String, dynamic> project;
@@ -16,7 +17,12 @@ class ProjectCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
         onTap: () {
-          // Navigate to project details
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProjectDetailsScreen(project: project),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(

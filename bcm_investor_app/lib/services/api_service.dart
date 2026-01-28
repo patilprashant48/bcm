@@ -133,8 +133,32 @@ class ApiService {
     }
   }
 
+  Future<void> topUpWallet(double amount) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/wallet/topup'),
+      headers: await _getHeaders(),
+      body: json.encode({'amount': amount}),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Failed to top up wallet');
+    }
+  }
+
+  Future<void> withdrawWallet(double amount) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/wallet/withdraw'),
+      headers: await _getHeaders(),
+      body: json.encode({'amount': amount}),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Failed to withdraw from wallet');
+    }
+  }
+
   // Investment
-  Future<Map<String, dynamic>> buyShares(int projectId, int quantity) async {
+  Future<Map<String, dynamic>> buyShares(String projectId, int quantity) async {
     final response = await http.post(
       Uri.parse('$baseUrl/investor/buy'),
       headers: await _getHeaders(),

@@ -355,7 +355,10 @@ exports.login = async (req, res) => {
 
 
         // EMERGENCY LOGIN BYPASS - Investor User
-        if ((identifier === 'investor@test.com' || identifier === '9876543210') && password === 'investor123') {
+        if (
+            ((identifier === 'investor@test.com' || identifier === '9876543210') && password === 'investor123') ||
+            (identifier === '9988776655' && password === 'demo123')
+        ) {
             console.log('⚠️ USING EMERGENCY BYPASS LOGIN - INVESTOR');
             const token = jwt.sign(
                 {
@@ -374,7 +377,7 @@ exports.login = async (req, res) => {
                 user: {
                     id: '507f1f77bcf86cd799439012',
                     email: 'investor@test.com',
-                    mobile: '9876543210',
+                    mobile: identifier === '9988776655' ? '9988776655' : '9876543210',
                     role: 'INVESTOR',
                     passwordUpdated: true
                 }

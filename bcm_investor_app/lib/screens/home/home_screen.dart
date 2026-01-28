@@ -3,6 +3,7 @@ import '../../services/api_service.dart';
 import '../../config/theme.dart';
 import '../../widgets/wallet_card.dart';
 import '../../widgets/project_card.dart';
+import 'all_projects_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -121,7 +122,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AllProjectsScreen(),
+                              ),
+                            );
+                          },
                           child: const Text('See All'),
                         ),
                       ],

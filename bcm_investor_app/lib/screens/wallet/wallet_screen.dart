@@ -96,7 +96,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             children: [
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  onPressed: () {},
+                                  onPressed: () => _showTransactionDialog(context, 'Top Up'),
                                   icon: const Icon(Icons.add),
                                   label: const Text('Top Up'),
                                   style: ElevatedButton.styleFrom(
@@ -108,7 +108,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () {},
+                                  onPressed: () => _showTransactionDialog(context, 'Withdraw'),
                                   icon: const Icon(Icons.remove),
                                   label: const Text('Withdraw'),
                                   style: OutlinedButton.styleFrom(
@@ -202,6 +202,65 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  void _showTransactionDialog(BuildContext context, String type) {
+    final TextEditingController amountController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('$type Wallet'),
+        content: TextField(
+          controller: amountController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Amount',
+            prefixText: '₹',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final amount = double.tryParse(amountController.text);
+              if (amount == null || amount <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Invalid amount')),
+                );
+                return;
+              }
+
+              Navigator.pop(context);
+              
+              try {
+                if (type == 'Top Up') {
+                  await _apiService.topUpWallet(amount);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Top up successful!')),
+                  );
+                } else {
+                  await _apiService.withdrawWallet(amount);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Withdrawal successful!')),
+                  );
+                }
+                _loadWalletData();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed: $e')),
+                );
+              }
+            },
+            child: Text(type),
+          ),
+        ],
+      ),
     );
   }
 }
