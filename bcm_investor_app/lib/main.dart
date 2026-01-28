@@ -9,8 +9,17 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+import 'screens/splash_screen.dart';
+
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _showSplash = true;
 
   @override
   Widget build(BuildContext context) {
@@ -19,20 +28,26 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
-        title: 'BCM Investor',
+        title: 'INVVESTA',
         theme: AppTheme.darkTheme,
         debugShowCheckedModeBanner: false,
-        home: Consumer<AuthProvider>(
-          builder: (context, auth, child) {
-            if (auth.isLoading) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            
-            return auth.isAuthenticated ? const MainScreen() : const LoginScreen();
-          },
-        ),
+        home: _showSplash
+            ? SplashScreen(
+                onInitialized: () {
+                  setState(() => _showSplash = false);
+                },
+              )
+            : Consumer<AuthProvider>(
+                builder: (context, auth, child) {
+                  if (auth.isLoading) {
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  
+                  return auth.isAuthenticated ? const MainScreen() : const LoginScreen();
+                },
+              ),
       ),
     );
   }
