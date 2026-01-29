@@ -86,25 +86,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       width: 100,
                       height: 100,
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(
-                        Icons.trending_up,
-                        size: 60,
-                        color: AppTheme.primaryColor,
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(height: 24),
                     
                     // Title
                     const Text(
-                      'BCM Investor',
+                      'INVVESTA',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        letterSpacing: 1.5,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -175,7 +176,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleLogin,
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
                             : const Text(
                                 'Login',
                                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
