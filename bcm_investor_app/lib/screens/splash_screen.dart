@@ -47,16 +47,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo Placeholder (Using Icon for now, replace with Image.asset later if needed)
+              // Logo
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.trending_up,
-                  size: 60,
-                  color: AppTheme.primaryColor,
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 24),
