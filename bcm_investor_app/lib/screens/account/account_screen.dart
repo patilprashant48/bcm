@@ -4,6 +4,8 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import 'profile_details_screen.dart';
 import 'transaction_history_screen.dart';
+import 'settings_screen.dart';
+import '../watchlist/watchlist_screen.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({Key? key}) : super(key: key);
@@ -107,8 +109,9 @@ class AccountScreen extends StatelessWidget {
               icon: Icons.bookmark,
               title: 'Watchlist',
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Watchlist feature coming soon!')),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const WatchlistScreen()),
                 );
               },
             ),
@@ -116,8 +119,9 @@ class AccountScreen extends StatelessWidget {
               icon: Icons.settings,
               title: 'Settings',
               onTap: () {
-                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Settings feature coming soon!')),
+                 Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
                 );
               },
             ),
