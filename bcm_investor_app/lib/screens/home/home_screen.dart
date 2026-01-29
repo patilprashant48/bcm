@@ -26,11 +26,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadData() async {
     try {
-      final wallet = await _apiService.getWallet();
+      final walletData = await _apiService.getWallet();
+      // The backend returns { wallets: [...] } now. Correctly parse this.
+      // Or if using the old map structure, handle both.
+      
+      Map<String, dynamic> businessWallet = {};
+      Map<String, dynamic> incomeWallet = {};
+
+      if (walletData.containsKey('wallets')) {
+        final List<dynamic> wallets = walletData['wallets'];
+        businessWallet = wallets.firstWhere(
+          (w) => w['type'] == 'INVESTOR_BUSINESS', 
+          orElse: () => {'balance': 0}
+        );
+        incomeWallet = wallets.firstWhere(
+          (w) => w['type'] == 'INVESTOR_INCOME', 
+          orElse: () => {'balance': 0}
+        );
+      } else {
+        // Fallback for old structure if strictly Map
+        businessWallet = {'balance': walletData['balance'] ?? 0};
+        incomeWallet = {'balance': walletData['income_balance'] ?? 0};
+      }
+
       final projects = await _apiService.getProjects();
       
       setState(() {
-        _wallet = wallet;
+        _wallet = {
+          'business_balance': businessWallet['balance'],
+          'income_balance': incomeWallet['balance']
+        };
         _projects = projects;
         _isLoading = false;
       });
@@ -48,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BCM Investor'),
+        title: const Text('Home'), // Changed title
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -68,8 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // Wallet Cards
                     WalletCard(
-                      title: 'Main Wallet',
-                      balance: (_wallet?['balance'] ?? 0).toDouble(),
+                      title: 'Business Wallet',
+                      balance: (_wallet?['business_balance'] ?? 0).toDouble(),
                       icon: Icons.account_balance_wallet,
                       color: AppTheme.primaryColor,
                     ),
@@ -83,9 +108,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     
                     const SizedBox(height: 24),
                     
-                    // Investment Categories
+                    // Investment Categories (Buckets)
                     const Text(
-                      'Investment Categories',
+                      'Investment Buckets',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -99,10 +124,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: [
-                          _buildCategoryCard('Shares', Icons.show_chart, AppTheme.primaryColor),
+                          _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
+                          _buildCategoryCard('Stocks', Icons.candlestick_chart, Colors.indigo),
                           _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
                           _buildCategoryCard('FDs', Icons.savings, Colors.orange),
-                          _buildCategoryCard('Partnerships', Icons.handshake, AppTheme.greenAccent),
+                          _buildCategoryCard('Partnerships', Icons.handshake, Colors.teal),
+                          _buildCategoryCard('Investments', Icons.monetization_on, Colors.green),
                         ],
                       ),
                     ),
