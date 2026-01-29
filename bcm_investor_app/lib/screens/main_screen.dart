@@ -14,14 +14,14 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 3; // Default to Home (index 3 based on new order)
+  int _currentIndex = 2; // Default to Home (index 2, center)
 
   final List<Widget> _screens = const [
     WatchlistScreen(),
-    AccountScreen(),
     PortfolioScreen(),
     HomeScreen(),
     OrdersScreen(),
+    AccountScreen(),
   ];
 
   @override
@@ -42,10 +42,6 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Watchlist',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Account',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.pie_chart),
             label: 'Portfolio',
           ),
@@ -56,6 +52,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.list_alt),
             label: 'Orders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Account',
           ),
         ],
       ),
