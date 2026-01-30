@@ -5,6 +5,7 @@ import '../../widgets/wallet_card.dart';
 import '../../widgets/project_card.dart';
 import '../account/transaction_history_screen.dart';
 import '../wallet/wallet_screen.dart';
+import '../wallet/top_up_screen.dart';
 import 'all_projects_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -101,9 +102,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppTheme.primaryColor,
                       showTopUp: true,
                       onTopUp: () {
-                         _showTransactionDialog(context, 'Top Up', (amount) async {
-                           await _apiService.topUpWallet(amount);
-                         });
+                         Navigator.push(
+                           context,
+                           MaterialPageRoute(builder: (context) => const TopUpScreen()),
+                         );
                       },
                       onTap: () {
                         // Navigate to WalletScreen for Top Up / Overview

@@ -133,15 +133,34 @@ class ApiService {
     }
   }
 
-  Future<void> topUpWallet(double amount) async {
+  Future<void> topUpWallet(double amount, String paymentMethod, String transactionId, String screenshotPath) async {
     final response = await http.post(
       Uri.parse('$baseUrl/wallet/topup'),
       headers: await _getHeaders(),
-      body: json.encode({'amount': amount}),
+      body: json.encode({
+        'amount': amount,
+        'paymentMethod': paymentMethod, // 'BANK_TRANSFER' or 'UPI'
+        'transactionId': transactionId,
+        'paymentScreenshotUrl': 'https://placeholder.com/dummy-screenshot.jpg', // Mocking URL since we track local file path
+      }),
     );
     
     if (response.statusCode != 200) {
-      throw Exception('Failed to top up wallet');
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Failed to top up wallet');
+    }
+  }
+
+  Future<Map<String, dynamic>> getPaymentDetails() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/wallet/payment-details'),
+      headers: await _getHeaders(),
+    );
+     
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['paymentDetails'];
+    } else {
+      throw Exception('Failed to get payment details');
     }
   }
 

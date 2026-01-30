@@ -175,6 +175,7 @@ exports.requestTopup = async (req, res) => {
             userId,
             amount: parseFloat(amount),
             paymentMethod,
+            transactionId: req.body.transactionId,
             paymentScreenshotUrl,
             status: PAYMENT_STATUS.PENDING
         });

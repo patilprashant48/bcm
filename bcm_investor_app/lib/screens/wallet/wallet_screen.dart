@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../config/theme.dart';
+import 'top_up_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({Key? key}) : super(key: key);
@@ -96,7 +97,12 @@ class _WalletScreenState extends State<WalletScreen> {
                             children: [
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  onPressed: () => _showTransactionDialog(context, 'Top Up'),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const TopUpScreen()),
+                                    );
+                                  },
                                   icon: const Icon(Icons.add),
                                   label: const Text('Top Up'),
                                   style: ElevatedButton.styleFrom(

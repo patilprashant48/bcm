@@ -132,6 +132,7 @@ const paymentRequestSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true, min: 0 },
     paymentMethod: { type: String, enum: ['BANK_TRANSFER', 'UPI'], required: true },
+    transactionId: { type: String },
     paymentScreenshotUrl: { type: String, required: true },
     status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'PENDING' },
     adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
