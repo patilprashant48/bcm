@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'bank_details_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -75,11 +76,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             title: const Text('Change Password', style: TextStyle(color: AppTheme.textPrimary)),
             trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-            onTap: () {
-               // Navigate to change password screen
-               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password change not implemented in this demo')));
-            },
-          ),
+             onTap: () {
+                // Navigate to change password screen
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password change not implemented in this demo')));
+             },
+           ),
+           ListTile(
+             title: const Text('Bank Details', style: TextStyle(color: AppTheme.textPrimary)),
+             subtitle: const Text('For Withdrawals', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+             trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+             onTap: () {
+               Navigator.push(
+                 context,
+                 MaterialPageRoute(builder: (context) => const BankDetailsScreen()),
+               );
+             },
+           ),
           
           const Divider(height: 32, color: Colors.grey),
           

@@ -6,6 +6,7 @@ import '../../widgets/project_card.dart';
 import '../account/transaction_history_screen.dart';
 import '../wallet/wallet_screen.dart';
 import '../wallet/top_up_screen.dart';
+import '../wallet/withdrawal_screen.dart';
 import 'all_projects_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -123,9 +124,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppTheme.greenAccent,
                       showWithdraw: true,
                       onWithdraw: () {
-                        _showTransactionDialog(context, 'Withdraw', (amount) async {
-                           await _apiService.withdrawWallet(amount);
-                        });
+                        // Pass current balance. Logic: fetch wallet again or use current state.
+                        double currentBalance = (_wallet?['income_balance'] ?? 0).toDouble();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => WithdrawalScreen(availableBalance: currentBalance)),
+                        ).then((_) => _loadData()); // Refresh on return
                       },
                       onTap: () {
                         // Navigate to TransactionHistoryScreen with DEBIT filter for Withdrawal History

@@ -208,4 +208,49 @@ class ApiService {
       throw Exception('Failed to get investments');
     }
   }
+  }
+
+  // Bank Details (Settings)
+  Future<Map<String, dynamic>> getBankDetails() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/auth/bank-details'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['bankDetails'] ?? {};
+    } else {
+      throw Exception('Failed to get bank details');
+    }
+  }
+
+  Future<void> updateBankDetails(Map<String, String> details) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/bank-details'),
+      headers: await _getHeaders(),
+      body: json.encode(details),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update bank details');
+    }
+  }
+
+  // Withdrawal
+  Future<void> requestWithdrawal(double amount, String paymentMethod, Map<String, dynamic> withdrawalDetails) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/wallet/withdraw'),
+      headers: await _getHeaders(),
+      body: json.encode({
+        'amount': amount,
+        'paymentMethod': paymentMethod,
+        'withdrawalDetails': withdrawalDetails,
+      }),
+    );
+    
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Failed to submit withdrawal request');
+    }
+  }
 }

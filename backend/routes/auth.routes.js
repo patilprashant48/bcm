@@ -14,5 +14,7 @@ router.post('/google-login', authController.googleLogin);
 // Protected routes
 router.post('/update-password', authenticateToken, authController.updatePassword);
 router.get('/profile', authenticateToken, authController.getProfile);
+router.get('/bank-details', authenticateToken, authController.getBankDetails);
+router.post('/bank-details', authenticateToken, authController.updateBankDetails);
 
 module.exports = router;

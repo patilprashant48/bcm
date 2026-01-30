@@ -644,6 +644,65 @@ exports.updatePassword = async (req, res) => {
 };
 
 /**
+ * Update User Bank Details (Settings)
+ */
+exports.updateBankDetails = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { bankAccountNumber, bankIfsc, bankName, upiId } = req.body;
+
+        let kycDetails = await models.KycDetails.findOne({ userId });
+
+        if (!kycDetails) {
+            kycDetails = new models.KycDetails({ userId });
+        }
+
+        if (bankAccountNumber) kycDetails.bankAccountNumber = bankAccountNumber;
+        if (bankIfsc) kycDetails.bankIfsc = bankIfsc;
+        if (bankName) kycDetails.bankName = bankName;
+        if (upiId) kycDetails.upiId = upiId;
+
+        await kycDetails.save();
+
+        res.json({
+            success: true,
+            message: 'Bank details updated successfully',
+            bankDetails: kycDetails
+        });
+
+    } catch (error) {
+        console.error('Update bank details error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update bank details',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get User Bank Details
+ */
+exports.getBankDetails = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const kycDetails = await models.KycDetails.findOne({ userId });
+
+        res.json({
+            success: true,
+            bankDetails: kycDetails || {}
+        });
+    } catch (error) {
+        console.error('Get bank details error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get bank details',
+            error: error.message
+        });
+    }
+};
+
+/**
  * Get current user profile
  */
 exports.getProfile = async (req, res) => {

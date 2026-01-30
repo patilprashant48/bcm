@@ -9,6 +9,7 @@ router.get('/', authenticateToken, walletController.getWallets);
 router.get('/:walletType/balance', authenticateToken, walletController.getWalletBalance);
 router.get('/:walletType/history', authenticateToken, walletController.getLedgerHistory);
 router.post('/topup', authenticateToken, walletController.requestTopup);
+router.post('/withdraw', authenticateToken, walletController.requestWithdrawal);
 router.get('/payment-requests', authenticateToken, walletController.getPaymentRequests);
 router.get('/payment-details', walletController.getPlatformPaymentDetails);
 

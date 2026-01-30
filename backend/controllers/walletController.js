@@ -196,6 +196,66 @@ exports.requestTopup = async (req, res) => {
 };
 
 /**
+ * Request wallet withdrawal
+ */
+exports.requestWithdrawal = async (req, res) => {
+    try {
+        const { amount, paymentMethod, withdrawalDetails } = req.body;
+        const userId = req.user.id;
+        const walletType = WALLET_TYPES.INVESTOR_INCOME; // Only Income wallet withdrawals in MVP? Assuming yes.
+
+        if (!amount || !paymentMethod || !withdrawalDetails) {
+            return res.status(400).json({
+                success: false,
+                message: 'Amount, payment method, and withdrawal details are required'
+            });
+        }
+
+        if (amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Amount must be greater than 0'
+            });
+        }
+
+        // Check sufficient balance
+        const walletResult = await ledgerService.getWallet(userId, walletType);
+        if (!walletResult.success) throw new Error(walletResult.error);
+
+        const balanceResult = await ledgerService.getBalance(walletResult.wallet._id);
+        if (balanceResult.balance < parseFloat(amount)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Insufficient balance in Income Wallet'
+            });
+        }
+
+        // Create withdrawal request
+        const withdrawalRequest = await models.PaymentRequest.create({
+            userId,
+            type: 'WITHDRAWAL',
+            amount: parseFloat(amount),
+            paymentMethod, // 'BANK_TRANSFER' or 'UPI'
+            withdrawalDetails, // Snapshot of user bank details
+            status: PAYMENT_STATUS.PENDING
+        });
+
+        res.json({
+            success: true,
+            message: 'Withdrawal request submitted successfully',
+            withdrawalRequest
+        });
+    } catch (error) {
+        console.error('Request withdrawal error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to submit withdrawal request',
+            error: error.message
+        });
+    }
+};
+
+/**
  * Get payment requests (for user)
  */
 exports.getPaymentRequests = async (req, res) => {

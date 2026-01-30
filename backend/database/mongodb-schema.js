@@ -130,10 +130,13 @@ ledgerEntrySchema.index({ walletId: 1, createdAt: -1 });
 
 const paymentRequestSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    type: { type: String, enum: ['DEPOSIT', 'WITHDRAWAL'], default: 'DEPOSIT' },
     amount: { type: Number, required: true, min: 0 },
     paymentMethod: { type: String, enum: ['BANK_TRANSFER', 'UPI'], required: true },
     transactionId: { type: String },
-    paymentScreenshotUrl: { type: String, required: true },
+    paymentScreenshotUrl: { type: String }, // User's screenshot for DEPOSIT
+    withdrawalDetails: { type: mongoose.Schema.Types.Mixed }, // Snapshot of user's bank details for WITHDRAWAL
+    adminProofUrl: { type: String }, // Admin's screenshot for WITHDRAWAL approval
     status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'PENDING' },
     adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     adminComment: { type: String },
