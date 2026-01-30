@@ -6,12 +6,21 @@ class WalletCard extends StatelessWidget {
   final IconData icon;
   final Color color;
 
+  final VoidCallback? onTopUp;
+  final VoidCallback? onWithdraw;
+  final bool showTopUp;
+  final bool showWithdraw;
+
   const WalletCard({
     Key? key,
     required this.title,
     required this.balance,
     required this.icon,
     required this.color,
+    this.onTopUp,
+    this.onWithdraw,
+    this.showTopUp = false,
+    this.showWithdraw = false,
   }) : super(key: key);
 
   @override
@@ -59,14 +68,24 @@ class WalletCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildActionButton('Top Up', Icons.add),
-              const SizedBox(width: 8),
-              _buildActionButton('Withdraw', Icons.remove),
-            ],
-          ),
+          if (showTopUp || showWithdraw) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (showTopUp)
+                  GestureDetector(
+                    onTap: onTopUp,
+                    child: _buildActionButton('Top Up', Icons.add),
+                  ),
+                if (showTopUp && showWithdraw) const SizedBox(width: 8),
+                if (showWithdraw)
+                  GestureDetector(
+                    onTap: onWithdraw,
+                    child: _buildActionButton('Withdraw', Icons.remove),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );

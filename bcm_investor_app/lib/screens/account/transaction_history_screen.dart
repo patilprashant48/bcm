@@ -4,7 +4,8 @@ import '../../services/api_service.dart';
 import 'package:intl/intl.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
-  const TransactionHistoryScreen({Key? key}) : super(key: key);
+  final String? filterType; // 'CREDIT' or 'DEBIT' or null
+  const TransactionHistoryScreen({Key? key, this.filterType}) : super(key: key);
 
   @override
   State<TransactionHistoryScreen> createState() => _TransactionHistoryScreenState();
@@ -25,8 +26,14 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   Future<void> _loadTransactions() async {
     try {
       final transactions = await _apiService.getTransactions();
+      
+      List<dynamic> filtered = transactions;
+      if (widget.filterType != null) {
+        filtered = transactions.where((t) => t['entryType'] == widget.filterType).toList();
+      }
+
       setState(() {
-        _transactions = transactions;
+        _transactions = filtered;
         _isLoading = false;
       });
     } catch (e) {
@@ -39,9 +46,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String title = 'Transaction History';
+    if (widget.filterType == 'CREDIT') title = 'Top Up History';
+    if (widget.filterType == 'DEBIT') title = 'Withdrawal History';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaction History'),
+        title: Text(title),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -78,9 +89,11 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                         children: [
                           Icon(Icons.receipt_long, size: 64, color: Colors.grey[300]),
                           const SizedBox(height: 16),
-                          const Text(
-                            'No transactions yet',
-                            style: TextStyle(
+                          Text(
+                            widget.filterType == null
+                                ? 'No transactions yet'
+                                : 'No ${title.toLowerCase()} yet',
+                            style: const TextStyle(
                               fontSize: 18,
                               color: AppTheme.textSecondary,
                               fontWeight: FontWeight.w500,

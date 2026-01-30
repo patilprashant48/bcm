@@ -3,6 +3,7 @@ import '../../services/api_service.dart';
 import '../../config/theme.dart';
 import '../../widgets/wallet_card.dart';
 import '../../widgets/project_card.dart';
+import '../account/transaction_history_screen.dart';
 import 'all_projects_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -73,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'), // Changed title
+        title: const Text('Welcome Investor'),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -93,10 +94,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // Wallet Cards
                     WalletCard(
-                      title: 'Business Wallet',
+                      title: 'Main Wallet',
                       balance: (_wallet?['business_balance'] ?? 0).toDouble(),
                       icon: Icons.account_balance_wallet,
                       color: AppTheme.primaryColor,
+                      showTopUp: true,
+                      onTopUp: () {
+                         _showTransactionDialog(context, 'Top Up', (amount) async {
+                           await _apiService.topUpWallet(amount);
+                         });
+                      },
                     ),
                     const SizedBox(height: 12),
                     WalletCard(
@@ -104,13 +111,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       balance: (_wallet?['income_balance'] ?? 0).toDouble(),
                       icon: Icons.trending_up,
                       color: AppTheme.greenAccent,
+                      showWithdraw: true,
+                      onWithdraw: () {
+                        _showTransactionDialog(context, 'Withdraw', (amount) async {
+                           await _apiService.withdrawWallet(amount);
+                        });
+                      },
                     ),
                     
                     const SizedBox(height: 24),
                     
                     // Investment Categories (Buckets)
                     const Text(
-                      'Investment Buckets',
+                      'Investment Categories',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -125,69 +138,164 @@ class _HomeScreenState extends State<HomeScreen> {
                         scrollDirection: Axis.horizontal,
                         children: [
                           _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
-                          _buildCategoryCard('Stocks', Icons.candlestick_chart, Colors.indigo),
                           _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
                           _buildCategoryCard('FDs', Icons.savings, Colors.orange),
-                          _buildCategoryCard('Partnerships', Icons.handshake, Colors.teal),
-                          _buildCategoryCard('Investments', Icons.monetization_on, Colors.green),
+                          _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
+                          _buildCategoryCard('Gold', Icons.circle, Colors.amberAccent),
+                          _buildCategoryCard('Estate', Icons.home_work, Colors.brown),
                         ],
                       ),
                     ),
                     
                     const SizedBox(height: 24),
                     
-                    // Live Projects
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Live Projects',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AllProjectsScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('See All'),
-                        ),
-                      ],
-                    ),
+                    // Live Project Lists
+                    _buildProjectSection('Live Projects - Top Selling', _projects),
+                    const SizedBox(height: 16),
+                    _buildProjectSection('Today Top', _projects.reversed.toList()), // Mock different order
+                    const SizedBox(height: 16),
+                    _buildProjectSection('Top Buying', _projects),
                     
-                    const SizedBox(height: 12),
-                    
-                    // Projects List
-                    if (_projects.isEmpty)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text(
-                            'No projects available',
-                            style: TextStyle(color: AppTheme.textSecondary),
-                          ),
-                        ),
-                      )
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _projects.length,
-                        itemBuilder: (context, index) {
-                          return ProjectCard(project: _projects[index]);
-                        },
-                      ),
+                    const SizedBox(height: 24),
+
+                    // Transaction Report Snippets
+                    _buildTransactionSnippet('Recent Top Ups', 'CREDIT', context),
+                    const SizedBox(height: 16),
+                    _buildTransactionSnippet('Recent Withdrawals', 'DEBIT', context),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildProjectSection(String title, List<dynamic> projects) {
+    if (projects.isEmpty) return const SizedBox.shrink();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 180, // Height for horizontal project card scroll similar to categories if we wanted, but let's stick to list or maybe horizontal?
+          // The previous implementation was a vertical list. Let's make these horizontal scrolls for "Top Selling" etc looks better.
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: projects.length > 5 ? 5 : projects.length, // Limit to 5
+            itemBuilder: (context, index) {
+              // We need a constrained width project card for horizontal view
+              return SizedBox(
+                width: 280,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: ProjectCard(project: projects[index]),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransactionSnippet(String title, String type, BuildContext context) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                   Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const TransactionHistoryScreen(filterType: null)), // Pass filter if supported
+                   );
+                },
+                child: const Text('More'),
+              ),
+            ],
+          ),
+          // Placeholder for last 5 entries - fetching this ideally requires the transaction list in state
+          // For now, we will just show a static message or we need to fetch transactions in _loadData
+          const Card(
+            child: Padding(
+               padding: EdgeInsets.all(16),
+               child: Center(child: Text('View full history in Report Screen', style: TextStyle(color: AppTheme.textSecondary))),
+            ),
+          )
+        ],
+      );
+  }
+
+  Future<void> _showTransactionDialog(
+      BuildContext context, String title, Function(double) onConfirm) async {
+    final amountController = TextEditingController();
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: amountController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Amount',
+              prefixText: '₹',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = double.tryParse(amountController.text);
+                if (amount != null && amount > 0) {
+                  Navigator.pop(context);
+                  try {
+                    await onConfirm(amount);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('$title successful'),
+                            backgroundColor: Colors.green),
+                      );
+                      _loadData();
+                    }
+                  } catch (e) {
+                     if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Failed: $e'),
+                            backgroundColor: Colors.red),
+                      );
+                    }
+                  }
+                }
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
     );
   }
 
