@@ -7,6 +7,7 @@ import '../account/transaction_history_screen.dart';
 import '../wallet/wallet_screen.dart';
 import '../wallet/top_up_screen.dart';
 import '../wallet/withdrawal_screen.dart';
+import '../market/market_screen.dart';
 import 'all_projects_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -323,28 +324,41 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryCard(String title, IconData icon, Color color) {
-    return Container(
-      width: 100,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
+    return GestureDetector(
+      onTap: () {
+          // Navigate to MarketScreen with filter
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MarketScreen(
+                initialFilter: title == 'Mutual Funds' ? 'MUTUAL_FUNDS' : (title == 'Shares' ? 'SHARES' : (title == 'FDs' ? 'FDS' : 'ALL')),
+              ),
             ),
-          ),
-        ],
+          );
+      },
+      child: Container(
+        width: 100,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

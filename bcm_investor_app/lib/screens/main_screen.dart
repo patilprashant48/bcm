@@ -3,7 +3,7 @@ import '../config/theme.dart';
 import 'home/home_screen.dart';
 import 'portfolio/portfolio_screen.dart';
 import 'watchlist/watchlist_screen.dart';
-import 'orders/orders_screen.dart';
+import 'market/market_screen.dart';
 import 'account/account_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class _MainScreenState extends State<MainScreen> {
     WatchlistScreen(),
     PortfolioScreen(),
     HomeScreen(),
-    OrdersScreen(),
+    MarketScreen(), // Index 3: Market (replaces Orders)
     AccountScreen(),
   ];
 
@@ -50,8 +50,8 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'Orders',
+            icon: Icon(Icons.bar_chart), // Changed icon to bar_chart for Market
+            label: 'Market',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
