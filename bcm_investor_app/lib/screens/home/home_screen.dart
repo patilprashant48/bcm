@@ -4,6 +4,7 @@ import '../../config/theme.dart';
 import '../../widgets/wallet_card.dart';
 import '../../widgets/project_card.dart';
 import '../account/transaction_history_screen.dart';
+import '../wallet/wallet_screen.dart';
 import 'all_projects_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -104,6 +105,13 @@ class _HomeScreenState extends State<HomeScreen> {
                            await _apiService.topUpWallet(amount);
                          });
                       },
+                      onTap: () {
+                        // Navigate to WalletScreen for Top Up / Overview
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const WalletScreen()),
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     WalletCard(
@@ -116,6 +124,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         _showTransactionDialog(context, 'Withdraw', (amount) async {
                            await _apiService.withdrawWallet(amount);
                         });
+                      },
+                      onTap: () {
+                        // Navigate to TransactionHistoryScreen with DEBIT filter for Withdrawal History
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TransactionHistoryScreen(filterType: 'DEBIT'),
+                          ),
+                        );
                       },
                     ),
                     
