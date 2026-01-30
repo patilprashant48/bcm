@@ -13,8 +13,47 @@ class ProjectDetailsScreen extends StatefulWidget {
 
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   final ApiService _apiService = ApiService();
-  bool _isInvesting = false;
-  final TextEditingController _amountController = TextEditingController();
+  double _currentInvestment = 0;
+  bool _isLoading = true;
+  List<dynamic> _otherProjects = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAdditionalData();
+  }
+
+  Future<void> _loadAdditionalData() async {
+    try {
+      final investments = await _apiService.getMyInvestments();
+      // Calculate total investment in this project
+      // Note: investments API returns array. We need to filter by project_id
+      double myTotal = 0;
+      for (var inv in investments) {
+        if (inv['project_id'].toString() == widget.project['_id'].toString() || 
+            inv['project_id'].toString() == widget.project['id'].toString()) {
+           // Provide fallback for amount field name if standard 'amount' is different
+           myTotal += (inv['investmentAmount'] ?? inv['amount'] ?? 0).toDouble();
+        }
+      }
+
+      // Fetch other projects for "All Live Projects" section if needed
+      // Ideally we pass this list or fetch it. For now, we'll fetch all.
+      final allProjects = await _apiService.getProjects();
+      final others = allProjects.where((p) => p['_id'].toString() != widget.project['_id'].toString()).toList();
+
+      if (mounted) {
+        setState(() {
+          _currentInvestment = myTotal;
+          _otherProjects = others;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      print('Failed to load additional data: $e');
+    }
+  }
 
   void _showInvestDialog() {
     showDialog(
@@ -24,15 +63,14 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Enter investment amount for ${widget.project['project_name']}'),
+            Text('Enter number of shares/units for ${widget.project['project_name']}'),
             const SizedBox(height: 16),
             TextField(
               controller: _amountController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Amount (₹)',
+                labelText: 'Quantity',
                 border: OutlineInputBorder(),
-                prefixText: '₹',
               ),
             ),
           ],
@@ -56,10 +94,10 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   }
 
   Future<void> _processInvestment() async {
-    final amount = double.tryParse(_amountController.text);
-    if (amount == null || amount <= 0) {
+    final quantity = int.tryParse(_amountController.text);
+    if (quantity == null || quantity <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount')),
+        const SnackBar(content: Text('Please enter a valid quantity')),
       );
       return;
     }
@@ -67,40 +105,13 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
     setState(() => _isInvesting = true);
 
     try {
-      // Assuming 1 share = 1 unit of currency for simplicity in this MVP
-      // In a real app, we'd calculate quantity based on share price
-      // For now, passing 'amount' as 'quantity' as per the simplified buyShares API viewed earlier 
-      // check ApiService.buyShares signature: buyShares(int projectId, int quantity)
-      
-      // Wait, buyShares takes quantity (int). Let's assume price is 1 or calculate based on share price.
-      // Let's check project details for share price. If not found, default to 100.
-      
-      // Actually, let's treat the input as "Units/Shares" instead of "Amount" if the API expects quantity.
-      // Or better, let's update the dialog to ask for "Number of Shares".
-      
-      int quantity = amount.toInt(); // Using the input as quantity for now
-      
-      // Use the ID from the project map. Ensure it's parsed as int if needed.
-      // The backend uses MongoDB _id (String), but the API service seems to expect int?
-      // Let's check api_service.dart again.
-      // api_service.dart: Future<Map<String, dynamic>> buyShares(int projectId, int quantity)
-      // Wait, MongoDB IDs are strings. The API service definition `int projectId` might be wrong if using MongoDB.
-      // Let's check the backend routes/controllers.
-      // I'll assume for now I need to pass the ID. If it fails, I'll fix the API service.
-      
-      // Correction: The backend likely expects a String ID for MongoDB. 
-      // I will assume the ApiService needs to be updated or I cast to dynamic/String.
-      // But I can't change ApiService type easily here without another tool call.
-      // I'll pass it as dynamic or fix ApiService.
-      
-      // Let's assume for this specific file, I'll treat it as dynamic interaction.
-      await _apiService.buyShares(widget.project['id'], quantity);
+      await _apiService.buyShares(widget.project['_id'] ?? widget.project['id'], quantity);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Investment successful!')),
         );
-        Navigator.pop(context); // Go back to home/list
+        _loadAdditionalData(); // Reload to update Current Investment
       }
     } catch (e) {
       if (mounted) {
@@ -126,141 +137,227 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
       appBar: AppBar(
         title: Text(project['project_name'] ?? 'Project Details'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Image/Gradient
-            Container(
-              height: 150,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(
-                child: Icon(Icons.business, size: 64, color: Colors.white24),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Title and Status
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    project['project_name'] ?? 'Unnamed Project',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Project Header (Image placeholder)
+              Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(16),
+                  image: const DecorationImage(
+                     image: NetworkImage('https://placeholder.com/project-image.jpg'), // Placeholder or project['image_url']
+                     fit: BoxFit.cover,
                   ),
                 ),
+                alignment: Alignment.bottomLeft,
+                child: Container(
+                   width: double.infinity,
+                   padding: const EdgeInsets.all(16),
+                   decoration: BoxDecoration(
+                     gradient: LinearGradient(
+                       colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                       begin: Alignment.bottomCenter,
+                       end: Alignment.topCenter,
+                     ),
+                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                   ),
+                   child: Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     mainAxisSize: MainAxisSize.min,
+                     children: [
+                       Text(
+                         project['project_name'] ?? 'Unnamed Project',
+                         style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                       ),
+                       Row(
+                         children: [
+                           const Icon(Icons.location_on, color: Colors.white70, size: 16),
+                           const SizedBox(width: 4),
+                           Text(project['location'] ?? 'Location N/A', style: const TextStyle(color: Colors.white, fontSize: 14)),
+                         ],
+                       )
+                     ],
+                   ),
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+
+              // Current Investment Card
+              if (_currentInvestment > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.greenAccent.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppTheme.greenAccent.withOpacity(0.1),
+                    border: Border.all(color: AppTheme.greenAccent),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    'LIVE',
-                    style: TextStyle(
-                      color: AppTheme.greenAccent,
-                      fontWeight: FontWeight.bold,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Your Current Investment', style: TextStyle(color: AppTheme.textSecondary)),
+                          const SizedBox(height: 4),
+                          Text('₹${_currentInvestment.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.greenAccent)),
+                        ],
+                      ),
+                      const Icon(Icons.check_circle, color: AppTheme.greenAccent, size: 32),
+                    ],
+                  ),
+                ),
+
+              // Company Profile Section
+              const Text('Company Profile', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                      child: Text(
+                        (project['business_name'] ?? 'C')[0],
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(project['business_name'] ?? 'Company Name', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          const Text('Verified Business Partner', style: TextStyle(color: AppTheme.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                           Text(project['business_description'] ?? 'Leading innovator in the sector.', 
+                             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                             maxLines: 2,
+                             overflow: TextOverflow.ellipsis,
+                           ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              project['business_name'] ?? 'Unknown Business',
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppTheme.textSecondary,
               ),
-            ),
-            
-            const SizedBox(height: 24),
 
-            // Progress Section
-            const Text(
-              'Funding Progress',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: 24),
+              
+              // Project Details Grid
+              const Text('Project Highlights', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                childAspectRatio: 2.5,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                children: [
+                  _buildDetailItem('Target Raise', '₹${(requiredCapital / 100000).toStringAsFixed(1)}L'),
+                  _buildDetailItem('Min Investment', '₹${project['min_investment'] ?? 1000}'),
+                  _buildDetailItem('Expected ROI', '${project['expected_roi'] ?? 12}%'),
+                  _buildDetailItem('Risk Level', project['risk_level'] ?? 'Medium'),
+                  _buildDetailItem('Duration', '${project['duration_months'] ?? 12} Months'),
+                   _buildDetailItem('Category', project['category'] ?? 'General'),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: progress / 100,
-                minHeight: 12,
-                backgroundColor: Colors.grey[200],
-                valueColor: const AlwaysStoppedAnimation(AppTheme.greenAccent),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Raised: ₹${raisedAmount.toStringAsFixed(0)}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  'Goal: ₹${requiredCapital.toStringAsFixed(0)}',
-                  style: const TextStyle(color: AppTheme.textSecondary),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 24),
+               const SizedBox(height: 24),
 
-            // Details Grid
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              childAspectRatio: 2.5,
-              children: [
-                _buildDetailItem('Min Investment', '₹${project['min_investment'] ?? 1000}'),
-                _buildDetailItem('Expected ROI', '${project['expected_roi'] ?? 12}%'),
-                _buildDetailItem('Duration', '${project['duration_months'] ?? 12} Months'),
-                _buildDetailItem('Risk Level', project['risk_level'] ?? 'Low'),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Description
-            const Text(
-              'About Project',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              project['description'] ?? 'No description available for this project.',
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-                height: 1.5,
-              ),
-            ),
-          ],
+               // Description
+               const Text('About Project', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+               const SizedBox(height: 8),
+               Text(
+                 project['description'] ?? 'No description provided.',
+                 style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+               ),
+               
+               const SizedBox(height: 32),
+               
+               // Other Live Projects
+               if (_otherProjects.isNotEmpty) ...[
+                 Row(
+                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                   children: [
+                     const Text('Other Live Projects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                     TextButton(onPressed: (){}, child: const Text('See All')),
+                   ],
+                 ),
+                 const SizedBox(height: 12),
+                 SizedBox(
+                   height: 160,
+                   child: ListView.builder(
+                     scrollDirection: Axis.horizontal,
+                     itemCount: _otherProjects.length,
+                     itemBuilder: (context, index) {
+                       final other = _otherProjects[index];
+                       return Container(
+                         width: 250,
+                         margin: const EdgeInsets.only(right: 12),
+                         padding: const EdgeInsets.all(12),
+                         decoration: BoxDecoration(
+                           color: Colors.white,
+                           borderRadius: BorderRadius.circular(12),
+                           border: Border.all(color: Colors.grey[200]!),
+                         ),
+                         child: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Text(other['project_name'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                             const SizedBox(height: 4),
+                             Text(other['business_name'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                             const Spacer(),
+                             Row(
+                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                               children: [
+                                 Text('ROI: ${other['expected_roi'] ?? 0}%', style: const TextStyle(color: AppTheme.greenAccent, fontWeight: FontWeight.bold)),
+                                 ElevatedButton(
+                                   onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => ProjectDetailsScreen(project: other)),
+                                      );
+                                   },
+                                   style: ElevatedButton.styleFrom(
+                                     backgroundColor: AppTheme.primaryColor,
+                                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                                     minimumSize: const Size(0, 30),
+                                   ),
+                                   child: const Text('View', style: TextStyle(fontSize: 12)),
+                                 )
+                               ],
+                             )
+                           ],
+                         ),
+                       );
+                     },
+                   ),
+                 ),
+                 const SizedBox(height: 80), // Space for FAB/Bottom Bar
+               ],
+            ],
+          ),
         ),
-      ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -298,24 +395,34 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   }
 
   Widget _buildDetailItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }
