@@ -168,11 +168,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       childAspectRatio: 0.95,
                       children: [
                         _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
-                        _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
                         _buildCategoryCard('FDs', Icons.savings, Colors.orange),
-                        _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
+                        _buildCategoryCard('SIP', Icons.trending_up, Colors.green),
+                        _buildCategoryCard('Mutual Funds', Icons.pie_chart, Colors.teal),
                         _buildCategoryCard('Gold', Icons.circle, Colors.yellow.shade700),
-                        _buildCategoryCard('Estate', Icons.home_work, Colors.brown),
+                        _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
                       ],
                     ),
                     
@@ -327,17 +327,17 @@ class _HomeScreenState extends State<HomeScreen> {
           case 'FDs':
             filterValue = 'FDS';
             break;
-          case 'Loans':
-            filterValue = 'LOANS';
+          case 'SIP':
+            filterValue = 'SIP';
             break;
-          case 'Coins':
-            filterValue = 'COINS';
+          case 'Mutual Funds':
+            filterValue = 'MUTUAL_FUNDS';
             break;
           case 'Gold':
             filterValue = 'GOLD';
             break;
-          case 'Estate':
-            filterValue = 'ESTATE';
+          case 'Coins':
+            filterValue = 'COINS';
             break;
         }
         
