@@ -158,10 +158,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 12),
                     
-                    // Categories Grid - 2 rows, no scrolling needed
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    // Categories Grid - Clean 2-column layout
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 1.4,
                       children: [
                         _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
                         _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
@@ -360,9 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
-        width: 105,
-        height: 75,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
@@ -371,17 +373,17 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 4),
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 6),
             Text(
               title,
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w600,
-                fontSize: 11,
+                fontSize: 12,
               ),
             ),
           ],
