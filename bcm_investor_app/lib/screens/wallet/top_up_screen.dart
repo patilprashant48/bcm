@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart'; // Just use file picker or image picker? package 'image_picker' is in pubspec
+
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import '../../config/theme.dart';

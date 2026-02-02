@@ -10,13 +10,6 @@ class WalletCard extends StatelessWidget {
   final VoidCallback? onWithdraw;
   final bool showTopUp;
   final bool showWithdraw;
-
-  const WalletCard({
-    Key? key,
-    required this.title,
-    required this.balance,
-    required this.icon,
-    required this.color,
   final VoidCallback? onTap;
 
   const WalletCard({
@@ -37,65 +30,65 @@ class WalletCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [color, color.withOpacity(0.7)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(icon, color: Colors.white, size: 24),
+                Icon(icon, color: Colors.white, size: 20),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               '₹${balance.toStringAsFixed(2)}',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 32,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
             if (showTopUp || showWithdraw) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  if (showTopUp)
-                    GestureDetector(
-                      onTap: onTopUp,
-                      child: _buildActionButton('Top Up', Icons.add),
-                    ),
-                  if (showTopUp && showWithdraw) const SizedBox(width: 8),
-                  if (showWithdraw)
-                    GestureDetector(
-                      onTap: onWithdraw,
-                      child: _buildActionButton('Withdraw', Icons.remove),
-                    ),
-                ],
-              ),
+              if (showTopUp)
+                GestureDetector(
+                  onTap: onTopUp,
+                  child: _buildActionButton('Top Up', Icons.add),
+                ),
+              if (showWithdraw)
+                GestureDetector(
+                  onTap: onWithdraw,
+                  child: _buildActionButton('Withdraw', Icons.remove),
+                ),
             ],
           ],
         ),

@@ -29,12 +29,17 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       
       List<dynamic> filtered = transactions;
       if (widget.filterType != null) {
-        filtered = transactions.where((t) => t['entryType'] == widget.filterType).toList();
+        // Handle both 'type' and 'entryType' field names
+        filtered = transactions.where((t) {
+          final txType = t['entryType'] ?? t['type'];
+          return txType == widget.filterType;
+        }).toList();
       }
 
       setState(() {
         _transactions = filtered;
         _isLoading = false;
+        _error = null;
       });
     } catch (e) {
       setState(() {
@@ -107,9 +112,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       itemCount: _transactions.length,
                       itemBuilder: (context, index) {
                         final transaction = _transactions[index];
-                        final isCredit = transaction['entryType'] == 'CREDIT';
+                        // Handle both 'type' and 'entryType' field names
+                        final txType = transaction['entryType'] ?? transaction['type'];
+                        final isCredit = txType == 'CREDIT' || txType == 'DEPOSIT';
                         final amount = (transaction['amount'] ?? 0).toDouble();
-                        final date = DateTime.parse(transaction['createdAt']);
+                        // Handle both 'createdAt' and 'created_at' field names
+                        final dateStr = transaction['createdAt'] ?? transaction['created_at'];
+                        final date = DateTime.parse(dateStr);
                         
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),

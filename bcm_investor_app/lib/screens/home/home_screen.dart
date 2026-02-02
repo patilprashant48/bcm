@@ -90,66 +90,68 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Wallet Cards
-                    WalletCard(
-                      title: 'Main Wallet',
-                      balance: (_wallet?['business_balance'] ?? 0).toDouble(),
-                      icon: Icons.account_balance_wallet,
-                      color: AppTheme.primaryColor,
-                      showTopUp: true,
-                      onTopUp: () {
-                         Navigator.push(
-                           context,
-                           MaterialPageRoute(builder: (context) => const TopUpScreen()),
-                         );
-                      },
-                      onTap: () {
-                        // Navigate to WalletScreen for Top Up / Overview
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const WalletScreen()),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    WalletCard(
-                      title: 'Income Wallet',
-                      balance: (_wallet?['income_balance'] ?? 0).toDouble(),
-                      icon: Icons.trending_up,
-                      color: AppTheme.greenAccent,
-                      showWithdraw: true,
-                      onWithdraw: () {
-                        // Pass current balance. Logic: fetch wallet again or use current state.
-                        double currentBalance = (_wallet?['income_balance'] ?? 0).toDouble();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => WithdrawalScreen(availableBalance: currentBalance)),
-                        ).then((_) => _loadData()); // Refresh on return
-                      },
-                      onTap: () {
-                        // Navigate to TransactionHistoryScreen with DEBIT filter for Withdrawal History
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const TransactionHistoryScreen(filterType: 'DEBIT'),
+                    // Wallet Cards - Side by Side
+                    Row(
+                      children: [
+                        Expanded(
+                          child: WalletCard(
+                            title: 'Business Wallet',
+                            balance: (_wallet?['business_balance'] ?? 0).toDouble(),
+                            icon: Icons.business_center,
+                            color: AppTheme.primaryColor,
+                            showTopUp: true,
+                            onTopUp: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const TopUpScreen()),
+                              );
+                            },
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const TransactionHistoryScreen(filterType: 'CREDIT')),
+                              );
+                            },
                           ),
-                        );
-                      },
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: WalletCard(
+                            title: 'Income Wallet',
+                            balance: (_wallet?['income_balance'] ?? 0).toDouble(),
+                            icon: Icons.account_balance_wallet,
+                            color: AppTheme.greenAccent,
+                            showWithdraw: true,
+                            onWithdraw: () {
+                              double currentBalance = (_wallet?['income_balance'] ?? 0).toDouble();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => WithdrawalScreen(availableBalance: currentBalance)),
+                              ).then((_) => _loadData());
+                            },
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const TransactionHistoryScreen(filterType: 'DEBIT')),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     
                     // Investment Categories (Buckets)
                     const Text(
                       'Investment Categories',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimary,
                       ),
@@ -157,35 +159,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     
                     SizedBox(
-                      height: 100,
+                      height: 90,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: [
                           _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
                           _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
                           _buildCategoryCard('FDs', Icons.savings, Colors.orange),
-                          _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
-                          _buildCategoryCard('Gold', Icons.circle, Colors.amberAccent),
-                          _buildCategoryCard('Estate', Icons.home_work, Colors.brown),
+                          _buildCategoryCard('Mutual Funds', Icons.pie_chart, Colors.green),
                         ],
                       ),
                     ),
                     
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     
-                    // Live Project Lists
-                    _buildProjectSection('Live Projects - Top Selling', _projects),
-                    const SizedBox(height: 16),
-                    _buildProjectSection('Today Top', _projects.reversed.toList()), // Mock different order
-                    const SizedBox(height: 16),
-                    _buildProjectSection('Top Buying', _projects),
-                    
-                    const SizedBox(height: 24),
-
-                    // Transaction Report Snippets
-                    _buildTransactionSnippet('Recent Top Ups', 'CREDIT', context),
-                    const SizedBox(height: 16),
-                    _buildTransactionSnippet('Recent Withdrawals', 'DEBIT', context),
+                    // Live Projects Section
+                    Expanded(
+                      child: _buildProjectSection('Live Projects', _projects),
+                    ),
                   ],
                 ),
               ),
@@ -199,30 +190,34 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AllProjectsScreen(projects: _projects)),
+                );
+              },
+              child: const Text('See All'),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
-        SizedBox(
-          height: 180, // Height for horizontal project card scroll similar to categories if we wanted, but let's stick to list or maybe horizontal?
-          // The previous implementation was a vertical list. Let's make these horizontal scrolls for "Top Selling" etc looks better.
+        Expanded(
           child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: projects.length > 5 ? 5 : projects.length, // Limit to 5
+            itemCount: projects.length,
             itemBuilder: (context, index) {
-              // We need a constrained width project card for horizontal view
-              return SizedBox(
-                width: 280,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: ProjectCard(project: projects[index]),
-                ),
-              );
+              return ProjectCard(project: projects[index]);
             },
           ),
         ),

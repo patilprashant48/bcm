@@ -208,7 +208,6 @@ class ApiService {
       throw Exception('Failed to get investments');
     }
   }
-  }
 
   // Bank Details (Settings)
   Future<Map<String, dynamic>> getBankDetails() async {

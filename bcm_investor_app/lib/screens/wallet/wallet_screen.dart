@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../config/theme.dart';
 import 'top_up_screen.dart';
+import 'withdrawal_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({Key? key}) : super(key: key);
@@ -47,6 +48,10 @@ class _WalletScreenState extends State<WalletScreen> {
             icon: const Icon(Icons.add),
             onPressed: () {
               // Show top-up dialog
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TopUpScreen()),
+              );
             },
           ),
         ],
@@ -114,7 +119,12 @@ class _WalletScreenState extends State<WalletScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () => _showTransactionDialog(context, 'Withdraw'),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => WithdrawalScreen(availableBalance: (_wallet?['balance'] ?? 0).toDouble())),
+                                    );
+                                  },
                                   icon: const Icon(Icons.remove),
                                   label: const Text('Withdraw'),
                                   style: OutlinedButton.styleFrom(
@@ -159,7 +169,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         itemCount: _transactions.length,
                         itemBuilder: (context, index) {
                           final txn = _transactions[index];
-                          final isCredit = txn['type'] == 'CREDIT';
+                          final isCredit = txn['type'] == 'CREDIT' || txn['type'] == 'DEPOSIT';
                           
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -208,65 +218,6 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
               ),
             ),
-    );
-  }
-
-  void _showTransactionDialog(BuildContext context, String type) {
-    final TextEditingController amountController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('$type Wallet'),
-        content: TextField(
-          controller: amountController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Amount',
-            prefixText: '₹',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final amount = double.tryParse(amountController.text);
-              if (amount == null || amount <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Invalid amount')),
-                );
-                return;
-              }
-
-              Navigator.pop(context);
-              
-              try {
-                if (type == 'Top Up') {
-                  await _apiService.topUpWallet(amount);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Top up successful!')),
-                  );
-                } else {
-                  await _apiService.withdrawWallet(amount);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Withdrawal successful!')),
-                  );
-                }
-                _loadWalletData();
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed: $e')),
-                );
-              }
-            },
-            child: Text(type),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -13,6 +13,8 @@ class ProjectDetailsScreen extends StatefulWidget {
 
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   final ApiService _apiService = ApiService();
+  bool _isInvesting = false;
+  final TextEditingController _amountController = TextEditingController();
   double _currentInvestment = 0;
   bool _isLoading = true;
   List<dynamic> _otherProjects = [];
