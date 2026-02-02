@@ -149,6 +149,60 @@ exports.getLedgerHistory = async (req, res) => {
 };
 
 /**
+ * Get all transactions (for mobile app)
+ */
+exports.getTransactions = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { limit = 50 } = req.query;
+
+        // Get all user wallets
+        const wallets = await models.Wallet.find({ userId });
+
+        if (!wallets || wallets.length === 0) {
+            return res.json({
+                success: true,
+                transactions: []
+            });
+        }
+
+        // Get transactions from all wallets
+        const walletIds = wallets.map(w => w._id);
+        const transactions = await models.WalletTransaction.find({
+            walletId: { $in: walletIds }
+        })
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .lean();
+
+        // Format transactions for mobile app
+        const formattedTransactions = transactions.map(txn => ({
+            id: txn._id,
+            amount: txn.amount,
+            type: txn.entryType,
+            entryType: txn.entryType,
+            description: txn.description || 'Transaction',
+            created_at: txn.createdAt,
+            createdAt: txn.createdAt,
+            balanceBefore: txn.balanceBefore,
+            balanceAfter: txn.balanceAfter
+        }));
+
+        res.json({
+            success: true,
+            transactions: formattedTransactions
+        });
+    } catch (error) {
+        console.error('Get transactions error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get transactions',
+            error: error.message
+        });
+    }
+};
+
+/**
  * Request wallet top-up
  */
 exports.requestTopup = async (req, res) => {

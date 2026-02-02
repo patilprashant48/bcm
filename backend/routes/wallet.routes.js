@@ -6,6 +6,7 @@ const { isAdmin } = require('../middleware/roleCheck');
 
 // User routes
 router.get('/', authenticateToken, walletController.getWallets);
+router.get('/transactions', authenticateToken, walletController.getTransactions);
 router.get('/:walletType/balance', authenticateToken, walletController.getWalletBalance);
 router.get('/:walletType/history', authenticateToken, walletController.getLedgerHistory);
 router.post('/topup', authenticateToken, walletController.requestTopup);

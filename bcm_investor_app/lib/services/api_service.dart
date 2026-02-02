@@ -82,12 +82,13 @@ class ApiService {
   // Projects
   Future<List<dynamic>> getProjects() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/investor/projects'),
+      Uri.parse('$baseUrl/investor/projects/live'),
       headers: await _getHeaders(),
     );
     
     if (response.statusCode == 200) {
-      return json.decode(response.body)['projects'];
+      final data = json.decode(response.body);
+      return data['projects'] ?? [];
     } else {
       throw Exception('Failed to get projects');
     }
@@ -198,12 +199,13 @@ class ApiService {
   // Portfolio
   Future<List<dynamic>> getMyInvestments() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/investor/investments'),
+      Uri.parse('$baseUrl/investor/portfolio'),
       headers: await _getHeaders(),
     );
     
     if (response.statusCode == 200) {
-      return json.decode(response.body)['investments'];
+      final data = json.decode(response.body);
+      return data['investments'] ?? data['portfolio'] ?? [];
     } else {
       throw Exception('Failed to get investments');
     }
