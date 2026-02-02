@@ -90,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadData,
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
                         _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
                         _buildCategoryCard('FDs', Icons.savings, Colors.orange),
-                        _buildCategoryCard('Mutual Funds', Icons.pie_chart, Colors.green),
                         _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
                         _buildCategoryCard('Gold', Icons.circle, Colors.yellow.shade700),
                         _buildCategoryCard('Estate', Icons.home_work, Colors.brown),
@@ -180,9 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 20),
                     
                     // Live Projects Section
-                    Expanded(
-                      child: _buildProjectSection('Live Projects', _projects),
-                    ),
+                    _buildProjectSection('Live Projects', _projects),
                   ],
                 ),
               ),
@@ -219,14 +216,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        Expanded(
-          child: ListView.builder(
-            itemCount: projects.length,
-            itemBuilder: (context, index) {
-              return ProjectCard(project: projects[index]);
-            },
-          ),
-        ),
+        // Display all projects in a column
+        ...projects.map((project) => ProjectCard(project: project)).toList(),
       ],
     );
   }
@@ -332,9 +323,6 @@ class _HomeScreenState extends State<HomeScreen> {
         switch (title) {
           case 'Shares':
             filterValue = 'SHARES';
-            break;
-          case 'Mutual Funds':
-            filterValue = 'MUTUAL_FUNDS';
             break;
           case 'FDs':
             filterValue = 'FDS';
