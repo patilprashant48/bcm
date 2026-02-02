@@ -211,6 +211,21 @@ class ApiService {
     }
   }
 
+  // Watchlist
+  Future<List<dynamic>> getWatchlist() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/investor/watchlist'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['watchlist'] ?? [];
+    } else {
+      throw Exception('Failed to get watchlist');
+    }
+  }
+
   // Bank Details (Settings)
   Future<Map<String, dynamic>> getBankDetails() async {
     final response = await http.get(
