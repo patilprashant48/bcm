@@ -158,14 +158,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 12),
                     
-                    // Categories Grid - Clean 2-column layout
+                    // Categories Grid - 3-column layout
                     GridView.count(
-                      crossAxisCount: 2,
+                      crossAxisCount: 3,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 1.4,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 0.95,
                       children: [
                         _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
                         _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
@@ -373,8 +373,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 6),
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 4),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -383,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w600,
-                fontSize: 12,
+                fontSize: 10,
               ),
             ),
           ],
