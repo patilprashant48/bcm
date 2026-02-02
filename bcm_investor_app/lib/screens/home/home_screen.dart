@@ -372,6 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: color,
                 fontWeight: FontWeight.w600,
                 fontSize: 10,
+                fontStyle: FontStyle.normal,
               ),
             ),
           ],
