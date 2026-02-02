@@ -167,6 +167,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
                           _buildCategoryCard('FDs', Icons.savings, Colors.orange),
                           _buildCategoryCard('Mutual Funds', Icons.pie_chart, Colors.green),
+                          _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
+                          _buildCategoryCard('Gold', Icons.circle, Colors.yellow.shade700),
+                          _buildCategoryCard('Estate', Icons.home_work, Colors.brown),
                         ],
                       ),
                     ),
@@ -321,15 +324,41 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCategoryCard(String title, IconData icon, Color color) {
     return GestureDetector(
       onTap: () {
-          // Navigate to MarketScreen with filter
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MarketScreen(
-                initialFilter: title == 'Mutual Funds' ? 'MUTUAL_FUNDS' : (title == 'Shares' ? 'SHARES' : (title == 'FDs' ? 'FDS' : 'ALL')),
-              ),
+        // Map category titles to filter values
+        String filterValue = 'ALL';
+        switch (title) {
+          case 'Shares':
+            filterValue = 'SHARES';
+            break;
+          case 'Mutual Funds':
+            filterValue = 'MUTUAL_FUNDS';
+            break;
+          case 'FDs':
+            filterValue = 'FDS';
+            break;
+          case 'Loans':
+            filterValue = 'LOANS';
+            break;
+          case 'Coins':
+            filterValue = 'COINS';
+            break;
+          case 'Gold':
+            filterValue = 'GOLD';
+            break;
+          case 'Estate':
+            filterValue = 'ESTATE';
+            break;
+        }
+        
+        // Navigate to MarketScreen with filter
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MarketScreen(
+              initialFilter: filterValue,
             ),
-          );
+          ),
+        );
       },
       child: Container(
         width: 100,
