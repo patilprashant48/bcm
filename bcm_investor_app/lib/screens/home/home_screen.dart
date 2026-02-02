@@ -158,20 +158,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 12),
                     
-                    SizedBox(
-                      height: 90,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
-                          _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
-                          _buildCategoryCard('FDs', Icons.savings, Colors.orange),
-                          _buildCategoryCard('Mutual Funds', Icons.pie_chart, Colors.green),
-                          _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
-                          _buildCategoryCard('Gold', Icons.circle, Colors.yellow.shade700),
-                          _buildCategoryCard('Estate', Icons.home_work, Colors.brown),
-                        ],
-                      ),
+                    // Categories Grid - 2 rows, no scrolling needed
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
+                        _buildCategoryCard('Loans', Icons.account_balance, Colors.purple),
+                        _buildCategoryCard('FDs', Icons.savings, Colors.orange),
+                        _buildCategoryCard('Mutual Funds', Icons.pie_chart, Colors.green),
+                        _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
+                        _buildCategoryCard('Gold', Icons.circle, Colors.yellow.shade700),
+                        _buildCategoryCard('Estate', Icons.home_work, Colors.brown),
+                      ],
                     ),
                     
                     const SizedBox(height: 20),
@@ -361,8 +360,9 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
-        width: 100,
-        margin: const EdgeInsets.only(right: 12),
+        width: 105,
+        height: 75,
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
@@ -371,14 +371,17 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 4),
             Text(
               title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w600,
-                fontSize: 12,
+                fontSize: 11,
               ),
             ),
           ],
