@@ -114,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const TransactionHistoryScreen(filterType: 'CREDIT')),
+                                MaterialPageRoute(builder: (context) => const WalletScreen()),
                               );
                             },
                           ),
@@ -137,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const TransactionHistoryScreen(filterType: 'DEBIT')),
+                                MaterialPageRoute(builder: (context) => const WalletScreen()),
                               );
                             },
                           ),
