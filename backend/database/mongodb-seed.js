@@ -146,10 +146,134 @@ async function seedDatabase() {
 
         console.log('✓ Sample announcement created');
 
+        // Create demo investor user
+        const demoPasswordHash = await bcrypt.hash('Demo@123', 10);
+
+        const demoInvestor = await models.User.create({
+            email: 'demo@investor.com',
+            mobile: '9876543210',
+            role: 'INVESTOR',
+            passwordHash: demoPasswordHash,
+            passwordUpdated: true,
+            isActive: true
+        });
+
+        console.log('✓ Demo investor user created');
+
+        // Create demo investor profile
+        await models.UserProfile.create({
+            userId: demoInvestor._id,
+            fullName: 'Demo Investor',
+            dateOfBirth: new Date('1990-01-01'),
+            address: '123 Demo Street, Mumbai, Maharashtra',
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            pincode: '400001',
+            panNumber: 'DEMOP1234A',
+            aadharNumber: '123456789012'
+        });
+
+        console.log('✓ Demo investor profile created');
+
+        // Create demo investor wallets
+        const businessWallet = await models.Wallet.create({
+            userId: demoInvestor._id,
+            walletType: 'INVESTOR_BUSINESS',
+            balance: 50000.00
+        });
+
+        const incomeWallet = await models.Wallet.create({
+            userId: demoInvestor._id,
+            walletType: 'INVESTOR_INCOME',
+            balance: 15000.00
+        });
+
+        console.log('✓ Demo investor wallets created');
+
+        // Create sample transactions for demo investor
+        const sampleTransactions = [
+            {
+                userId: demoInvestor._id,
+                walletId: businessWallet._id,
+                amount: 10000.00,
+                entryType: 'CREDIT',
+                description: 'Initial wallet top-up',
+                balanceBefore: 0,
+                balanceAfter: 10000.00,
+                createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+            },
+            {
+                userId: demoInvestor._id,
+                walletId: businessWallet._id,
+                amount: 25000.00,
+                entryType: 'CREDIT',
+                description: 'Wallet top-up via UPI',
+                balanceBefore: 10000.00,
+                balanceAfter: 35000.00,
+                createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000) // 20 days ago
+            },
+            {
+                userId: demoInvestor._id,
+                walletId: businessWallet._id,
+                amount: 5000.00,
+                entryType: 'DEBIT',
+                description: 'Investment in Tech Startup Project',
+                balanceBefore: 35000.00,
+                balanceAfter: 30000.00,
+                createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) // 15 days ago
+            },
+            {
+                userId: demoInvestor._id,
+                walletId: businessWallet._id,
+                amount: 20000.00,
+                entryType: 'CREDIT',
+                description: 'Wallet top-up via Bank Transfer',
+                balanceBefore: 30000.00,
+                balanceAfter: 50000.00,
+                createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) // 10 days ago
+            },
+            {
+                userId: demoInvestor._id,
+                walletId: incomeWallet._id,
+                amount: 5000.00,
+                entryType: 'CREDIT',
+                description: 'Dividend from Tech Startup',
+                balanceBefore: 0,
+                balanceAfter: 5000.00,
+                createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+            },
+            {
+                userId: demoInvestor._id,
+                walletId: incomeWallet._id,
+                amount: 10000.00,
+                entryType: 'CREDIT',
+                description: 'Profit share from Real Estate Project',
+                balanceBefore: 5000.00,
+                balanceAfter: 15000.00,
+                createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) // 3 days ago
+            },
+            {
+                userId: demoInvestor._id,
+                walletId: incomeWallet._id,
+                amount: 2000.00,
+                entryType: 'DEBIT',
+                description: 'Withdrawal to bank account',
+                balanceBefore: 17000.00,
+                balanceAfter: 15000.00,
+                createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
+            }
+        ];
+
+        await models.WalletTransaction.insertMany(sampleTransactions);
+        console.log('✓ Demo investor transactions created');
+
         console.log('\n✅ Database seeding completed successfully!');
         console.log('\nDefault Admin Credentials:');
         console.log('Email: admin@bcm.com');
         console.log('Password: Admin@123');
+        console.log('\nDemo Investor Credentials:');
+        console.log('Mobile: 9876543210');
+        console.log('Password: Demo@123');
 
     } catch (error) {
         console.error('Error seeding database:', error);
