@@ -565,11 +565,31 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  'Date: $today',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
+                GestureDetector(
+                  onTap: () => _showDateRangePicker(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white.withOpacity(0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today, color: Colors.white, size: 14),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Date: $today',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -661,6 +681,126 @@ class _HomeScreenState extends State<HomeScreen> {
           const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textSecondary),
         ],
       ),
+    );
+    );
+  }
+
+  Future<void> _showDateRangePicker() async {
+    DateTime? fromDate;
+    DateTime? toDate;
+    
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppTheme.cardColor,
+              title: const Text(
+                'Select Date Range',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // From Date
+                  ListTile(
+                    title: const Text(
+                      'From Date',
+                      style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      fromDate != null 
+                        ? DateFormat('dd/MM/yyyy').format(fromDate!)
+                        : 'Select start date',
+                      style: TextStyle(
+                        color: fromDate != null 
+                          ? AppTheme.greenAccent 
+                          : AppTheme.textSecondary,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.calendar_today, color: AppTheme.primaryColor),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: fromDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          fromDate = picked;
+                          // Reset toDate if it's before fromDate
+                          if (toDate != null && toDate!.isBefore(fromDate!)) {
+                            toDate = null;
+                          }
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // To Date
+                  ListTile(
+                    title: const Text(
+                      'To Date',
+                      style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      toDate != null 
+                        ? DateFormat('dd/MM/yyyy').format(toDate!)
+                        : 'Select end date',
+                      style: TextStyle(
+                        color: toDate != null 
+                          ? AppTheme.greenAccent 
+                          : AppTheme.textSecondary,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.calendar_today, color: AppTheme.primaryColor),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: toDate ?? (fromDate ?? DateTime.now()),
+                        firstDate: fromDate ?? DateTime(2020),
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          toDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: fromDate != null && toDate != null
+                    ? () {
+                        Navigator.pop(context);
+                        // Navigate to Transaction History with date filter
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TransactionHistoryScreen(
+                              filterType: null,
+                              fromDate: fromDate,
+                              toDate: toDate,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

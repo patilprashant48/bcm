@@ -5,7 +5,15 @@ import 'package:intl/intl.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   final String? filterType; // 'CREDIT' or 'DEBIT' or null
-  const TransactionHistoryScreen({Key? key, this.filterType}) : super(key: key);
+  final DateTime? fromDate;
+  final DateTime? toDate;
+  
+  const TransactionHistoryScreen({
+    Key? key, 
+    this.filterType,
+    this.fromDate,
+    this.toDate,
+  }) : super(key: key);
 
   @override
   State<TransactionHistoryScreen> createState() => _TransactionHistoryScreenState();
@@ -33,6 +41,21 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         filtered = transactions.where((t) {
           final txType = t['entryType'] ?? t['type'];
           return txType == widget.filterType;
+        }).toList();
+      }
+      
+      // Filter by date range if provided
+      if (widget.fromDate != null && widget.toDate != null) {
+        filtered = filtered.where((t) {
+          try {
+            final txDate = DateTime.parse(t['created_at'] ?? t['createdAt'] ?? '');
+            final fromMidnight = DateTime(widget.fromDate!.year, widget.fromDate!.month, widget.fromDate!.day);
+            final toMidnight = DateTime(widget.toDate!.year, widget.toDate!.month, widget.toDate!.day, 23, 59, 59);
+            return txDate.isAfter(fromMidnight.subtract(const Duration(seconds: 1))) && 
+                   txDate.isBefore(toMidnight.add(const Duration(seconds: 1)));
+          } catch (e) {
+            return false;
+          }
         }).toList();
       }
 
