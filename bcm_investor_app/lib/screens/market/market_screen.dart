@@ -163,7 +163,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
               _buildCategoryChip('SHARES', 'Shares'),
               _buildCategoryChip('FDS', 'FDs'),
               _buildCategoryChip('SIP', 'SIP'),
-              _buildCategoryChip('MUTUAL_FUNDS', 'Mutual Funds'),
+              _buildCategoryChip('SAVING', 'Saving'),
               _buildCategoryChip('GOLD', 'Gold'),
               _buildCategoryChip('COINS', 'Coins'),
             ],

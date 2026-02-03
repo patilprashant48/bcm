@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Shares': 2000,
     'FDs': 0,
     'SIP': 0,
-    'Mutual Funds': 0,
+    'Saving': 0,
     'Gold': 0,
     'Coins': 0,
   };
@@ -183,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
                         _buildCategoryCard('FDs', Icons.savings, Colors.orange),
                         _buildCategoryCard('SIP', Icons.trending_up, Colors.green),
-                        _buildCategoryCard('Mutual Funds', Icons.pie_chart, Colors.teal),
+                        _buildCategoryCard('Saving', Icons.pie_chart, Colors.teal),
                         _buildCategoryCard('Gold', Icons.circle, Colors.yellow.shade700),
                         _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
                       ],
@@ -353,8 +353,8 @@ class _HomeScreenState extends State<HomeScreen> {
           case 'SIP':
             filterValue = 'SIP';
             break;
-          case 'Mutual Funds':
-            filterValue = 'MUTUAL_FUNDS';
+          case 'Saving':
+            filterValue = 'SAVING';
             break;
           case 'Gold':
             filterValue = 'GOLD';
