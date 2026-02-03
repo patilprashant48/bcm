@@ -201,6 +201,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     
                     const SizedBox(height: 20),
                     
+                    // Today's Buy Table
+                    _buildTodaysBuyTable(),
+                    
+                    const SizedBox(height: 20),
+                    
                     // Live Projects Section
                     _buildProjectSection('Live Projects', _projects),
                   ],
@@ -800,6 +805,126 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildTodaysBuyTable() {
+    final today = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    
+    // Mock data for today's buy transactions
+    final List<Map<String, dynamic>> todaysBuys = [
+      {
+        'txnId': '1256445',
+        'stocks': 'HDFC',
+        'quantity': 12,
+        'amount': 200,
+        'balance': 500,
+      },
+      {
+        'txnId': '4566',
+        'stocks': 'SBI',
+        'quantity': 10,
+        'amount': 100,
+        'balance': 300,
+      },
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.greenAccent.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          // Header with shopping cart icon
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.greenAccent,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.shopping_cart,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Today\'s Buy',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  'Date: $today',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Table
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor: MaterialStateProperty.all(
+                AppTheme.surfaceColor,
+              ),
+              dataRowColor: MaterialStateProperty.all(
+                AppTheme.cardColor,
+              ),
+              headingTextStyle: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+              dataTextStyle: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 12,
+              ),
+              columnSpacing: 20,
+              horizontalMargin: 12,
+              columns: const [
+                DataColumn(label: Text('Txn ID')),
+                DataColumn(label: Text('Stocks')),
+                DataColumn(label: Text('Quantity')),
+                DataColumn(label: Text('Amount')),
+                DataColumn(label: Text('Balance')),
+              ],
+              rows: todaysBuys.map((buy) {
+                return DataRow(
+                  cells: [
+                    DataCell(Text(buy['txnId'].toString())),
+                    DataCell(Text(buy['stocks'].toString())),
+                    DataCell(Text(buy['quantity'].toString())),
+                    DataCell(Text('₹${buy['amount']}')),
+                    DataCell(Text('₹${buy['balance']}')),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
