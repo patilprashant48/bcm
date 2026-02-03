@@ -196,11 +196,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     
                     const SizedBox(height: 20),
                     
-                    // Today's Reports Section
-                    _buildTodaysReports(),
-                    
-                    const SizedBox(height: 20),
-                    
                     // Today's Buy Table
                     _buildTodaysBuyTable(),
                     
@@ -872,11 +867,31 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                Text(
-                  'Date: $today',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
+                GestureDetector(
+                  onTap: () => _showDateRangePicker(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white.withOpacity(0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today, color: Colors.white, size: 14),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Date: $today',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
+                      ],
+                    ),
                   ),
                 ),
               ],
