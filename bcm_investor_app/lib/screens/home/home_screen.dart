@@ -897,45 +897,53 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // Table
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowColor: MaterialStateProperty.all(
-                AppTheme.surfaceColor,
-              ),
-              dataRowColor: MaterialStateProperty.all(
-                AppTheme.cardColor,
-              ),
-              headingTextStyle: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-              dataTextStyle: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 12,
-              ),
-              columnSpacing: 20,
-              horizontalMargin: 12,
-              columns: const [
-                DataColumn(label: Text('Txn ID')),
-                DataColumn(label: Text('Stocks')),
-                DataColumn(label: Text('Quantity')),
-                DataColumn(label: Text('Amount')),
-                DataColumn(label: Text('Balance')),
-              ],
-              rows: todaysBuys.map((buy) {
-                return DataRow(
-                  cells: [
-                    DataCell(Text(buy['txnId'].toString())),
-                    DataCell(Text(buy['stocks'].toString())),
-                    DataCell(Text(buy['quantity'].toString())),
-                    DataCell(Text('₹${buy['amount']}')),
-                    DataCell(Text('₹${buy['balance']}')),
+          // Table - Scrollable
+          Container(
+            constraints: const BoxConstraints(
+              maxHeight: 200, // Show approximately 3-4 rows at a time
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowColor: MaterialStateProperty.all(
+                    AppTheme.surfaceColor,
+                  ),
+                  dataRowColor: MaterialStateProperty.all(
+                    AppTheme.cardColor,
+                  ),
+                  headingTextStyle: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  dataTextStyle: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 12,
+                  ),
+                  columnSpacing: 20,
+                  horizontalMargin: 12,
+                  columns: const [
+                    DataColumn(label: Text('Txn ID')),
+                    DataColumn(label: Text('Stocks')),
+                    DataColumn(label: Text('Quantity')),
+                    DataColumn(label: Text('Amount')),
+                    DataColumn(label: Text('Balance')),
                   ],
-                );
-              }).toList(),
+                  rows: todaysBuys.map((buy) {
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(buy['txnId'].toString())),
+                        DataCell(Text(buy['stocks'].toString())),
+                        DataCell(Text(buy['quantity'].toString())),
+                        DataCell(Text('₹${buy['amount']}')),
+                        DataCell(Text('₹${buy['balance']}')),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
           ),
         ],
