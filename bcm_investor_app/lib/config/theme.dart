@@ -25,6 +25,7 @@ class AppTheme {
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       cardColor: cardColor,
+      fontFamily: 'Roboto',
       
       appBarTheme: const AppBarTheme(
         backgroundColor: surfaceColor,
@@ -33,7 +34,9 @@ class AppTheme {
         titleTextStyle: TextStyle(
           color: textPrimary,
           fontSize: 20,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'Roboto',
+          letterSpacing: 0.15,
         ),
       ),
       
@@ -54,6 +57,12 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 2,
+          textStyle: const TextStyle(
+            fontFamily: 'Roboto',
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
       
@@ -65,7 +74,10 @@ class AppTheme {
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.all(16),
-        hintStyle: const TextStyle(color: textHint),
+        hintStyle: const TextStyle(
+          color: textHint,
+          fontFamily: 'Roboto',
+        ),
       ),
       
       cardTheme: const CardThemeData(
@@ -74,6 +86,22 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16), bottom: Radius.circular(16)),
         ),
+      ),
+      
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w300, letterSpacing: -1.5),
+        displayMedium: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w300, letterSpacing: -0.5),
+        displaySmall: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400),
+        headlineMedium: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, letterSpacing: 0.25),
+        headlineSmall: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400),
+        titleLarge: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, letterSpacing: 0.15),
+        titleMedium: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, letterSpacing: 0.15),
+        titleSmall: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, letterSpacing: 0.1),
+        bodyLarge: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, letterSpacing: 0.5),
+        bodyMedium: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, letterSpacing: 0.25),
+        labelLarge: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, letterSpacing: 1.25),
+        bodySmall: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, letterSpacing: 0.4),
+        labelSmall: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, letterSpacing: 1.5),
       ),
     );
   }
