@@ -160,16 +160,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     
                     const SizedBox(height: 20),
                     
-                    // Ad Offer Zone - Slider
-                    _buildAdOfferZone(),
-                    
-                    const SizedBox(height: 20),
-                    
-                    // Today's Reports Section
-                    _buildTodaysReports(),
-                    
-                    const SizedBox(height: 20),
-                    
                     // Investment Categories (Buckets)
                     const Text(
                       'Investment Categories',
@@ -198,6 +188,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
                       ],
                     ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Ad Offer Zone - Slider
+                    _buildAdOfferZone(),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Today's Reports Section
+                    _buildTodaysReports(),
                     
                     const SizedBox(height: 20),
                     
