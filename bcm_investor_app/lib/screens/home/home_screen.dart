@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:carousel_slider/carousel_slider.dart' as carousel;
 import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
 import '../../config/theme.dart';
@@ -437,8 +437,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
-        CarouselSlider(
-          options: CarouselOptions(
+        carousel.CarouselSlider(
+          options: carousel.CarouselOptions(
             height: 120,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 3),
