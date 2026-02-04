@@ -104,89 +104,94 @@ class _HomeScreenState extends State<HomeScreen> {
           : RefreshIndicator(
               onRefresh: _loadData,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.zero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Wallet Cards - Side by Side
                     Row(
-                      children: [
-                        Expanded(
-                          child: WalletCard(
-                            title: 'Business Wallet',
-                            balance: (_wallet?['business_balance'] ?? 0).toDouble(),
-                            icon: Icons.business_center,
-                            color: AppTheme.primaryColor,
-                            showTopUp: true,
-                            onTopUp: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const TopUpScreen()),
-                              );
-                            },
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const WalletScreen()),
-                              );
-                            },
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: WalletCard(
+                              title: 'Business Wallet',
+                              amount: (_wallet?['business_balance'] ?? 0).toDouble(),
+                              icon: Icons.business_center,
+                              color: AppTheme.primaryColor,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const WalletScreen()),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: WalletCard(
-                            title: 'Income Wallet',
-                            balance: (_wallet?['income_balance'] ?? 0).toDouble(),
-                            icon: Icons.account_balance_wallet,
-                            color: AppTheme.greenAccent,
-                            showWithdraw: true,
-                            onWithdraw: () {
-                              double currentBalance = (_wallet?['income_balance'] ?? 0).toDouble();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => WithdrawalScreen(availableBalance: currentBalance)),
-                              ).then((_) => _loadData());
-                            },
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const WalletScreen()),
-                              );
-                            },
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: WalletCard(
+                              title: 'Income Wallet',
+                              amount: (_wallet?['income_balance'] ?? 0).toDouble(),
+                              icon: Icons.account_balance_wallet,
+                              color: AppTheme.greenAccent,
+                              showWithdraw: true,
+                              onWithdraw: () {
+                                double currentBalance = (_wallet?['income_balance'] ?? 0).toDouble();
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => WithdrawalScreen(availableBalance: currentBalance)),
+                                ).then((_) => _loadData());
+                              },
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const WalletScreen()),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     
                     const SizedBox(height: 20),
                     
                     // Investment Categories (Buckets)
-                    const Text(
-                      'Investment Categories',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Investment Categories',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          
+                          // Categories Grid - 3-column layout
+                          GridView.count(
+                            crossAxisCount: 3,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                            childAspectRatio: 0.95,
+                            children: [
+                              _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
+                              _buildCategoryCard('FDs', Icons.savings, Colors.orange),
+                              _buildCategoryCard('SIP', Icons.trending_up, Colors.green),
+                              _buildCategoryCard('Saving', Icons.pie_chart, Colors.teal),
+                              _buildCategoryCard('Gold', Icons.circle, Colors.yellow.shade700),
+                              _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Categories Grid - 3-column layout
-                    GridView.count(
-                      crossAxisCount: 3,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 0.95,
-                      children: [
-                        _buildCategoryCard('Shares', Icons.show_chart, Colors.blue),
-                        _buildCategoryCard('FDs', Icons.savings, Colors.orange),
-                        _buildCategoryCard('SIP', Icons.trending_up, Colors.green),
-                        _buildCategoryCard('Saving', Icons.pie_chart, Colors.teal),
-                        _buildCategoryCard('Gold', Icons.circle, Colors.yellow.shade700),
-                        _buildCategoryCard('Coins', Icons.monetization_on, Colors.amber),
-                      ],
                     ),
                     
                     const SizedBox(height: 20),
@@ -202,7 +207,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 20),
                     
                     // Live Projects Section
-                    _buildProjectSection('Live Projects', _projects),
+                    // Live Projects Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: _buildProjectSection('Live Projects', _projects),
+                    ),
                   ],
                 ),
               ),
@@ -442,8 +451,8 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 120,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 3),
-            enlargeCenterPage: true,
-            viewportFraction: 0.9,
+            enlargeCenterPage: false,
+            viewportFraction: 1.0,
             onPageChanged: (index, reason) {
               setState(() {
                 _currentAdIndex = index;
@@ -462,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width,
-                    margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                    margin: EdgeInsets.zero,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -470,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Color(int.parse(ad['color']!)).withOpacity(0.7),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.zero,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -827,20 +836,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.greenAccent.withOpacity(0.3)),
+        border: Border(
+          top: BorderSide(color: AppTheme.greenAccent.withOpacity(0.3)),
+          bottom: BorderSide(color: AppTheme.greenAccent.withOpacity(0.3)),
+        ),
       ),
       child: Column(
         children: [
           // Header with shopping cart icon
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppTheme.greenAccent,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
             ),
             child: Row(
               children: [
