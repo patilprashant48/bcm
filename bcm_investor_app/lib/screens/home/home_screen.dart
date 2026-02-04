@@ -109,7 +109,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Wallet Cards - Side by Side
-                    Row(
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Row(
@@ -117,9 +116,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           Expanded(
                             child: WalletCard(
                               title: 'Business Wallet',
-                              amount: (_wallet?['business_balance'] ?? 0).toDouble(),
+                              balance: (_wallet?['business_balance'] ?? 0).toDouble(),
                               icon: Icons.business_center,
                               color: AppTheme.primaryColor,
+                              showTopUp: true,
+                              onTopUp: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const TopUpScreen()),
+                                );
+                              },
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -132,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Expanded(
                             child: WalletCard(
                               title: 'Income Wallet',
-                              amount: (_wallet?['income_balance'] ?? 0).toDouble(),
+                              balance: (_wallet?['income_balance'] ?? 0).toDouble(),
                               icon: Icons.account_balance_wallet,
                               color: AppTheme.greenAccent,
                               showWithdraw: true,
