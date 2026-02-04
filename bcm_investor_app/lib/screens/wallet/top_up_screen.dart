@@ -189,7 +189,42 @@ class _TopUpScreenState extends State<TopUpScreen> {
     );
   }
 
-  // ... (Method Selector remains same, handled by existing code chunks if not replaced)
+  Widget _buildMethodSelector() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildChoiceChip('UPI', 'UPI'),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildChoiceChip('Bank Transfer', 'BANK_TRANSFER'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChoiceChip(String label, String value) {
+    final isSelected = _selectedMethod == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedMethod = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
 
   // Replaces _buildPaymentDetailsCard
   Widget _buildPaymentDetailsSection() {
