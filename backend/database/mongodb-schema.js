@@ -415,6 +415,13 @@ const fdSchemeSchema = new mongoose.Schema({
         incomeWallet: { type: Number, default: 0 }
     },
     taxDeductionPercent: { type: Number, default: 0 },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Business User ID
+    approvalStatus: {
+        type: String,
+        enum: ['PENDING', 'APPROVED', 'REJECTED', 'RECHECK'],
+        default: 'PENDING'
+    },
+    adminComments: { type: String },
     isActive: { type: Boolean, default: true },
     isPublished: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
