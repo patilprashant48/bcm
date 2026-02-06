@@ -349,6 +349,11 @@ exports.getAllPaymentRequests = async (req, res) => {
         // Format response to match frontend expectations
         const formattedRequests = requests.map(req => ({
             ...req.toObject(),
+            id: req._id,
+            created_at: req.createdAt,
+            payment_method: req.paymentMethod,
+            payment_screenshot_url: req.paymentScreenshotUrl,
+            user_email: req.userId?.email,
             users: {
                 email: req.userId?.email
             }

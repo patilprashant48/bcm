@@ -9,6 +9,7 @@ const SchemeMaster = () => {
     const [formData, setFormData] = useState({
         name: '',
         minAmount: '',
+        interestPercent: '',
         interestCalculationDays: '',
         interestTransferType: [], // ['SCHEME', 'MAIN', 'INCOME']
         interestDivision: { scheme: 0, mainWallet: 0, incomeWallet: 0 },
@@ -82,6 +83,7 @@ const SchemeMaster = () => {
             await fdsAPI.createScheme({
                 ...formData,
                 minAmount: parseFloat(formData.minAmount),
+                interestPercent: parseFloat(formData.interestPercent),
                 interestCalculationDays: parseInt(formData.interestCalculationDays),
                 transferScheduleDays: parseInt(formData.transferScheduleDays),
                 maturityDays: parseInt(formData.maturityDays),
@@ -95,6 +97,7 @@ const SchemeMaster = () => {
             setFormData({
                 name: '',
                 minAmount: '',
+                interestPercent: '',
                 interestCalculationDays: '',
                 interestTransferType: [],
                 interestDivision: { scheme: 0, mainWallet: 0, incomeWallet: 0 },

@@ -300,49 +300,70 @@ class _TopUpScreenState extends State<TopUpScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columnSpacing: 20,
-            headingRowColor: MaterialStateProperty.all(Colors.grey[200]),
-            columns: const [
-              DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black))),
-              DataColumn(label: Text('Mode', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black))),
-              DataColumn(label: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black))),
-              DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black))),
-              DataColumn(label: Text('Ref No.', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black))),
-            ],
-            rows: _requests.map((req) {
-              final status = (req['status'] ?? 'PENDING').toString().toUpperCase();
-              String dateStr = req['createdAt'] ?? req['created_at'] ?? '';
-              if (dateStr.length >= 10) dateStr = dateStr.substring(0, 10);
-
-              return DataRow(
-                cells: [
-                  DataCell(Text(dateStr, style: const TextStyle(color: Colors.black87))),
-                  DataCell(Text(req['paymentMethod'] ?? 'N/A', style: const TextStyle(color: Colors.black87))),
-                  DataCell(Text('₹${req['amount'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
-                  DataCell(Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _getStatusColor(status)),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        color: _getStatusColor(status),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  )),
-                  DataCell(Text(req['transactionId'] ?? '-', style: const TextStyle(color: Colors.black87))),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+              ),
+              child: const Row(
+                children: [
+                  Expanded(flex: 3, child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12))),
+                  Expanded(flex: 2, child: Text('Mode', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12))),
+                  Expanded(flex: 3, child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12))),
+                  Expanded(flex: 3, child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12))),
+                  Expanded(flex: 3, child: Text('Ref', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12))),
                 ],
-              );
-            }).toList(),
-          ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Items
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _requests.length,
+              separatorBuilder: (_, __) => const Divider(height: 16),
+              itemBuilder: (context, index) {
+                final req = _requests[index];
+                final status = (req['status'] ?? 'PENDING').toString().toUpperCase();
+                String dateStr = req['createdAt'] ?? req['created_at'] ?? '';
+                if (dateStr.length >= 10) dateStr = dateStr.substring(0, 10);
+
+                return Row(
+                  children: [
+                    Expanded(flex: 3, child: Text(dateStr, style: const TextStyle(color: Colors.black87, fontSize: 11))),
+                    Expanded(flex: 2, child: Text(req['paymentMethod'] ?? 'N/A', style: const TextStyle(color: Colors.black87, fontSize: 11))),
+                    Expanded(flex: 3, child: Text('₹${req['amount'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 11))),
+                    Expanded(flex: 3, child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(status).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: _getStatusColor(status)),
+                        ),
+                        child: Text(
+                          status,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: _getStatusColor(status),
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    )),
+                    Expanded(flex: 3, child: Text(req['transactionId'] ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black87, fontSize: 11))),
+                  ],
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
