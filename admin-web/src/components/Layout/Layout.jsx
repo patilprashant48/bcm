@@ -58,16 +58,8 @@ const Layout = () => {
             items: [
                 { name: 'Shares', path: '/capital/shares', icon: '📈' },
                 { name: 'Loans', path: '/capital/loans', icon: '💵' },
-                { name: 'Fixed Deposits', path: '/capital/fds', icon: '🏦' },
+                { name: 'Fixed Deposits', path: '/fds/schemes', icon: '🏦' }, // Changed path and name
                 { name: 'Partnerships', path: '/capital/partnerships', icon: '🤝' },
-            ]
-        },
-        {
-            id: 'fds',
-            title: 'FDS',
-            icon: '📜',
-            items: [
-                { name: 'Scheme Master', path: '/fds/schemes', icon: '📝' },
             ]
         },
         {
