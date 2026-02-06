@@ -13,6 +13,7 @@ const Layout = () => {
         { name: 'Plan Activation', path: '/plans', icon: '📋' },
         { name: 'Create Project', path: '/projects/create', icon: '➕' },
         { name: 'My Projects', path: '/projects', icon: '📁' },
+        { name: 'Capital Tools', path: '/capital', icon: '💼' },
         { name: 'Wallet Topup', path: '/wallet', icon: '💰' },
         { name: 'Legal Docs', path: '/legal', icon: '⚖️' },
     ];

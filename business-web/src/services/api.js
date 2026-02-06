@@ -56,7 +56,16 @@ export const walletAPI = {
 export const capitalAPI = {
     createShare: (data) => api.post('/business/capital/shares', data),
     createLoan: (data) => api.post('/business/capital/loans', data),
-    createFD: (data) => api.post('/business/capital/fds', data),
+    createFD: (data) => api.post('/fds/schemes', {
+        name: data.scheme_name,
+        interestPercent: data.interest_rate,
+        minAmount: data.fd_amount,
+        maturityDays: data.tenure_months * 30,
+        // Defaults
+        interestCalculationDays: 365,
+        interestTransferType: 'MATURITY', // Default for simple FD
+        taxDeductionPercent: 0
+    }),
     createPartnership: (data) => api.post('/business/capital/partnerships', data),
     getMyCapitalTools: () => api.get('/business/capital'),
 };

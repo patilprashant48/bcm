@@ -9,8 +9,10 @@ router.get('/active', authenticateToken, fdsController.getActiveSchemes);
 router.post('/invest', authenticateToken, fdsController.investInScheme);
 
 // Admin routes for FDS Scheme Master
-router.post('/schemes', authenticateToken, isAdmin, fdsController.createScheme);
-router.get('/schemes', authenticateToken, isAdmin, fdsController.getSchemes);
+// Scheme Management (Admin & Business)
+router.post('/schemes', authenticateToken, fdsController.createScheme); // Role logic inside controller
+router.get('/schemes', authenticateToken, fdsController.getSchemes); // TODO: Filter for Business User?
 router.patch('/schemes/:id/status', authenticateToken, isAdmin, fdsController.updateSchemeStatus);
+router.post('/schemes/:id/approval', authenticateToken, isAdmin, fdsController.manageSchemeApproval); // New approval route
 
 module.exports = router;
