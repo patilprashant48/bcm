@@ -395,58 +395,62 @@ exports.approvePayment = async (req, res) => {
             });
         }
 
-        // Get admin wallet
-        const adminWalletResult = await ledgerService.getWallet(adminId, WALLET_TYPES.ADMIN);
-
-        if (!adminWalletResult.success) {
-            throw new Error('Failed to get admin wallet');
-        }
-
         // Get user wallet based on role
         const userWalletType = paymentRequest.userId.role === 'BUSINESS_USER'
             ? WALLET_TYPES.BUSINESS
-            : WALLET_TYPES.INVESTOR_BUSINESS;
+            : WALLET_TYPES.INVESTOR_BUSINESS; // Default wallet
+
+        // Determine target wallet (For Withdrawal: Use actual source wallet)
+        // MVP: Withdrawal usually from INCOME or BUSINESS wallet.
+        // Step 5995 requestWithdrawal uses INVESTOR_INCOME.
+        // We will default to INVESTOR_INCOME for Withdrawals if Investor.
+
+        let targetWalletType = userWalletType;
+        if (paymentRequest.type === 'WITHDRAWAL') {
+            targetWalletType = WALLET_TYPES.INVESTOR_INCOME;
+        }
 
         const userWalletResult = await ledgerService.getWallet(
             paymentRequest.userId._id,
-            userWalletType
+            targetWalletType
         );
 
         if (!userWalletResult.success) {
             throw new Error('Failed to get user wallet');
         }
 
-        // Debit admin wallet (platform liability)
-        const debitResult = await ledgerService.debitWallet(
-            adminWalletResult.wallet._id,
-            paymentRequest.amount,
-            `Top-up approved for user`,
-            REFERENCE_TYPES.TOPUP,
-            requestId,
-            { user_id: paymentRequest.userId._id },
-            adminId
-        );
+        let transactionResult;
 
-        if (!debitResult.success) {
-            return res.status(400).json({
-                success: false,
-                message: debitResult.error
-            });
+        if (paymentRequest.type === 'WITHDRAWAL') {
+            // For Withdrawal: Debit User Wallet
+            transactionResult = await ledgerService.debitWallet(
+                userWalletResult.wallet._id,
+                paymentRequest.amount,
+                'Withdrawal Approved',
+                REFERENCE_TYPES.PAYOUT,
+                requestId,
+                null,
+                adminId
+            );
+        } else {
+            // For Deposit (Top-Up): Credit User Wallet
+            // We SKIP debiting Admin wallet to prevent issues with Admin Balance
+            transactionResult = await ledgerService.creditWallet(
+                userWalletResult.wallet._id,
+                paymentRequest.amount,
+                'Wallet top-up',
+                REFERENCE_TYPES.TOPUP,
+                requestId,
+                null,
+                adminId
+            );
         }
 
-        // Credit user wallet
-        const creditResult = await ledgerService.creditWallet(
-            userWalletResult.wallet._id,
-            paymentRequest.amount,
-            'Wallet top-up',
-            REFERENCE_TYPES.TOPUP,
-            requestId,
-            null,
-            adminId
-        );
-
-        if (!creditResult.success) {
-            throw new Error('Failed to credit user wallet');
+        if (!transactionResult.success) {
+            return res.status(400).json({
+                success: false,
+                message: transactionResult.error || 'Transaction failed'
+            });
         }
 
         // Update payment request status
@@ -456,16 +460,21 @@ exports.approvePayment = async (req, res) => {
         await paymentRequest.save();
 
         // Send email notification
-        await emailService.sendPaymentStatusEmail(
-            paymentRequest.userId.email,
-            paymentRequest.amount,
-            PAYMENT_STATUS.APPROVED
-        );
+        try {
+            await emailService.sendPaymentStatusEmail(
+                paymentRequest.userId.email,
+                paymentRequest.amount,
+                PAYMENT_STATUS.APPROVED
+            );
+        } catch (emailError) {
+            console.error('Failed to send status email:', emailError);
+            // Continue execution as payment is processed
+        }
 
         res.json({
             success: true,
-            message: 'Payment approved and wallet credited',
-            newBalance: creditResult.balance
+            message: `Payment approved and wallet ${paymentRequest.type === 'WITHDRAWAL' ? 'debited' : 'credited'}`,
+            newBalance: transactionResult.balance
         });
     } catch (error) {
         console.error('Approve payment error:', error);
