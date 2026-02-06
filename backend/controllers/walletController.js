@@ -400,15 +400,33 @@ exports.approvePayment = async (req, res) => {
             });
         }
 
-        // Get user wallet based on role
-        const userWalletType = paymentRequest.userId.role === 'BUSINESS_USER'
-            ? WALLET_TYPES.BUSINESS
-            : WALLET_TYPES.INVESTOR_BUSINESS; // Default wallet
-
-        let targetWalletType = userWalletType;
-        if (paymentRequest.type === 'WITHDRAWAL') {
-            targetWalletType = WALLET_TYPES.INVESTOR_INCOME;
+        // Check if user exists (was populated)
+        if (!paymentRequest.userId) {
+            return res.status(404).json({
+                success: false,
+                message: 'User associated with this request not found (may be deleted)'
+            });
         }
+
+        const userRole = paymentRequest.userId.role;
+        let targetWalletType;
+
+        // Determine correct wallet type based on Role and Request Type
+        if (userRole === 'BUSINESS_USER') {
+            // Business Users operate primarily with BUSINESS wallet
+            targetWalletType = WALLET_TYPES.BUSINESS;
+        } else {
+            // Investors have two wallets: Business (Capital) and Income (Earnings)
+            if (paymentRequest.type === 'WITHDRAWAL') {
+                // Withdrawals come from Income Wallet
+                targetWalletType = WALLET_TYPES.INVESTOR_INCOME;
+            } else {
+                // Top-ups go to Business Wallet
+                targetWalletType = WALLET_TYPES.INVESTOR_BUSINESS;
+            }
+        }
+
+        console.log(`Approving Payment: RequestID=${requestId}, User=${paymentRequest.userId.email}, Role=${userRole}, Type=${paymentRequest.type}, TargetWallet=${targetWalletType}`);
 
         const userWalletResult = await ledgerService.getWallet(
             paymentRequest.userId._id,
