@@ -15,7 +15,6 @@ class _WalletScreenState extends State<WalletScreen> {
   final ApiService _apiService = ApiService();
   Map<String, dynamic>? _wallet;
   List<dynamic> _transactions = [];
-  List<dynamic> _requests = [];
   bool _isLoading = true;
 
   @override
@@ -28,16 +27,15 @@ class _WalletScreenState extends State<WalletScreen> {
     try {
       final wallet = await _apiService.getWallet();
       final transactions = await _apiService.getTransactions();
-      final requests = await _apiService.getPaymentRequests();
+      // Payment requests now moved to TopUpScreen
       
       setState(() {
         _wallet = wallet;
         _transactions = transactions;
-        _requests = requests;
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -143,84 +141,6 @@ class _WalletScreenState extends State<WalletScreen> {
                     ),
                     
                     const SizedBox(height: 24),
-                    
-                    const SizedBox(height: 24),
-
-                    // Pending Requests Section
-                    if (_requests.isNotEmpty) ...[
-                      const Text(
-                        'Payment Requests',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white10),
-                        ),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            headingRowColor: MaterialStateProperty.all(Colors.white.withOpacity(0.05)),
-                            columns: const [
-                              DataColumn(label: Text('Date', style: TextStyle(color: AppTheme.textSecondary))),
-                              DataColumn(label: Text('Mode', style: TextStyle(color: AppTheme.textSecondary))),
-                              DataColumn(label: Text('Amount', style: TextStyle(color: AppTheme.textSecondary))),
-                              DataColumn(label: Text('Status', style: TextStyle(color: AppTheme.textSecondary))),
-                              DataColumn(label: Text('Details', style: TextStyle(color: AppTheme.textSecondary))),
-                            ],
-                            rows: _requests.map((req) {
-                              Color statusColor = Colors.orange;
-                              final status = req['status'] ?? 'PENDING';
-                              if (status == 'APPROVED') statusColor = Colors.green;
-                              if (status == 'REJECTED') statusColor = Colors.red;
-                              
-                              String dateStr = req['createdAt'] ?? req['created_at'] ?? '';
-                              if (dateStr.length >= 10) dateStr = dateStr.substring(0, 10);
-
-                              return DataRow(
-                                cells: [
-                                  DataCell(Text(
-                                    dateStr,
-                                    style: const TextStyle(color: AppTheme.textPrimary),
-                                  )),
-                                  DataCell(Text(
-                                    req['paymentMethod'] ?? 'N/A',
-                                    style: const TextStyle(color: AppTheme.textPrimary),
-                                  )),
-                                  DataCell(Text(
-                                    '₹${req['amount'] ?? 0}',
-                                    style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
-                                  )),
-                                  DataCell(Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: statusColor.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: statusColor.withOpacity(0.5)),
-                                    ),
-                                    child: Text(
-                                      status,
-                                      style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
-                                    ),
-                                  )),
-                                  DataCell(Text(
-                                    req['transactionId'] ?? '-',
-                                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                                  )),
-                                ],
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
                     
                     // Transactions
                     const Text(

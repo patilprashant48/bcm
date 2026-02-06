@@ -3,6 +3,7 @@ const models = require('../database/mongodb-schema');
 const ledgerService = require('./ledgerService');
 const emailService = require('./emailService');
 const { WALLET_TYPES, REFERENCE_TYPES } = require('../config/constants');
+const dailyInterestJob = require('../cron/dailyInterest');
 
 /**
  * Automation Service - Cron Jobs for BCM Platform
@@ -333,6 +334,11 @@ class AutomationService {
         this.startPartnershipPayouts();
         this.startPlanExpiryCheck();
         this.startSharePriceUpdates();
+
+        // Start Daily Interest Job
+        dailyInterestJob.job.start();
+        this.jobs.push(dailyInterestJob.job);
+        console.log('✓ Daily Interest Calculation scheduled (daily 2:00 PM)');
 
         console.log('\n✓ All automation services started\n');
     }

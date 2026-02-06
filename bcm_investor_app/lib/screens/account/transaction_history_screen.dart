@@ -22,8 +22,9 @@ class TransactionHistoryScreen extends StatefulWidget {
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
-  List<dynamic> _transactions = [];
+  List<dynamic> _allTransactions = [];
   String? _error;
+  String? _quickFilter; // TODAY_BUY, TODAY_SELL, TODAY_TOPUP, TODAY_WITHDRAWAL
 
   @override
   void initState() {
@@ -59,17 +60,63 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         }).toList();
       }
 
-      setState(() {
-        _transactions = filtered;
-        _isLoading = false;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _allTransactions = filtered;
+          _isLoading = false;
+          _error = null;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  List<dynamic> get _displayedTransactions {
+    if (_quickFilter == null) return _allTransactions;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return _allTransactions.where((t) {
+      // Date Check (Must be Today)
+      final dateStr = t['created_at'] ?? t['createdAt'];
+      if (dateStr == null) return false;
+      
+      try {
+        final txDate = DateTime.parse(dateStr).toLocal();
+        final txDay = DateTime(txDate.year, txDate.month, txDate.day);
+        if (txDay != today) return false;
+      } catch (e) {
+        return false;
+      }
+
+      final type = (t['entryType'] ?? t['type'] ?? '').toString().toUpperCase();
+      final ref = (t['referenceType'] ?? '').toString().toUpperCase();
+      final desc = (t['description'] ?? '').toString().toLowerCase();
+
+      switch (_quickFilter) {
+        case 'TODAY_BUY':
+          // Debit + Investment
+          return type == 'DEBIT' && (ref == 'INVESTMENT' || desc.contains('buy') || desc.contains('invest'));
+        case 'TODAY_SELL':
+           // Credit + Investment/Return
+          return type == 'CREDIT' && (ref == 'INVESTMENT' || ref == 'RETURN' || desc.contains('sell'));
+        case 'TODAY_TOPUP':
+           // Credit + Topup
+          return type == 'CREDIT' && (ref == 'TOPUP');
+        case 'TODAY_WITHDRAWAL':
+           // Debit + Payout/Withdrawal
+          return type == 'DEBIT' && (ref == 'PAYOUT' || ref == 'WITHDRAWAL');
+        default:
+          return true;
+      }
+    }).toList();
   }
 
   @override
@@ -110,80 +157,129 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     ],
                   ),
                 )
-              : _transactions.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.receipt_long, size: 64, color: Colors.grey[300]),
-                          const SizedBox(height: 16),
-                          Text(
-                            widget.filterType == null
-                                ? 'No transactions yet'
-                                : 'No ${title.toLowerCase()} yet',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: AppTheme.textSecondary,
-                              fontWeight: FontWeight.w500,
+              : Column(
+                  children: [
+                    // Quick Filter Dropdown (Only if no external filter type)
+                    if (widget.filterType == null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor, // Using Primary Color (Blue) instead of Green to match theme, or could use Green per screenshot
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _quickFilter,
+                              hint: const Text(
+                                'Select Filter',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              dropdownColor: AppTheme.primaryColor,
+                              icon: const Icon(Icons.filter_list, color: Colors.white),
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              isExpanded: true,
+                              items: const [
+                                DropdownMenuItem(value: null, child: Text('All Transactions')),
+                                DropdownMenuItem(value: 'TODAY_BUY', child: Text("Today's Buy")),
+                                DropdownMenuItem(value: 'TODAY_SELL', child: Text("Today's Selling")),
+                                DropdownMenuItem(value: 'TODAY_TOPUP', child: Text("Today's Top Up")),
+                                DropdownMenuItem(value: 'TODAY_WITHDRAWAL', child: Text("Today's Withdrawal")),
+                              ],
+                              onChanged: (val) {
+                                setState(() => _quickFilter = val);
+                              },
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _transactions.length,
-                      itemBuilder: (context, index) {
-                        final transaction = _transactions[index];
-                        // Handle both 'type' and 'entryType' field names
-                        final txType = transaction['entryType'] ?? transaction['type'];
-                        final isCredit = txType == 'CREDIT' || txType == 'DEPOSIT';
-                        final amount = (transaction['amount'] ?? 0).toDouble();
-                        // Handle both 'createdAt' and 'created_at' field names
-                        final dateStr = transaction['createdAt'] ?? transaction['created_at'];
-                        final date = DateTime.parse(dateStr);
-                        
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: (isCredit ? Colors.green : Colors.red).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                    
+                    // Transaction List
+                    Expanded(
+                      child: _displayedTransactions.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.receipt_long, size: 64, color: Colors.grey[300]),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    widget.filterType == null
+                                        ? 'No transactions found'
+                                        : 'No ${title.toLowerCase()} yet',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              child: Icon(
-                                isCredit ? Icons.arrow_downward : Icons.arrow_upward,
-                                color: isCredit ? Colors.green : Colors.red,
-                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _displayedTransactions.length,
+                              itemBuilder: (context, index) {
+                                final transaction = _displayedTransactions[index];
+                                final txType = transaction['entryType'] ?? transaction['type'];
+                                final isCredit = txType == 'CREDIT' || txType == 'DEPOSIT';
+                                final amount = (transaction['amount'] ?? 0).toDouble();
+                                final dateStr = transaction['createdAt'] ?? transaction['created_at'];
+                                final date = DateTime.parse(dateStr);
+                                
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  child: ListTile(
+                                    leading: Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: (isCredit ? Colors.green : Colors.red).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        isCredit ? Icons.arrow_downward : Icons.arrow_upward,
+                                        color: isCredit ? Colors.green : Colors.red,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      transaction['description'] ?? 'Transaction',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      DateFormat('MMM d, yyyy • h:mm a').format(date.toLocal()),
+                                      style: const TextStyle(
+                                        color: AppTheme.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    trailing: Text(
+                                      '${isCredit ? '+' : '-'}₹${amount.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        color: isCredit ? Colors.green : Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                            title: Text(
-                              transaction['description'] ?? 'Transaction',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            subtitle: Text(
-                              DateFormat('MMM d, yyyy • h:mm a').format(date.toLocal()),
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                            trailing: Text(
-                              '${isCredit ? '+' : '-'}₹${amount.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: isCredit ? Colors.green : Colors.red,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
                     ),
+                  ],
+                ),
     );
   }
 }

@@ -157,6 +157,19 @@ const SchemeMaster = () => {
                             />
                         </div>
 
+                        {/* Interest Percent */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Interest Rate (%)</label>
+                            <input
+                                type="number"
+                                name="interestPercent"
+                                value={formData.interestPercent}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                required
+                            />
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             {/* 3. Interest Calculation Days */}
                             <div>
@@ -321,8 +334,8 @@ const SchemeMaster = () => {
                                         <button
                                             onClick={() => handleToggleStatus(scheme._id, 'isActive', !scheme.isActive)}
                                             className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${scheme.isActive
-                                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                : 'bg-red-100 text-red-700 hover:bg-red-200'
                                                 }`}
                                         >
                                             {scheme.isActive ? 'ACTIVE' : 'DEACTIVATED'}
@@ -331,8 +344,8 @@ const SchemeMaster = () => {
                                         <button
                                             onClick={() => handleToggleStatus(scheme._id, 'isPublished', !scheme.isPublished)}
                                             className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${scheme.isPublished
-                                                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                                                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                                                 }`}
                                         >
                                             {scheme.isPublished ? 'PUBLISHED' : 'UNPUBLISHED'}
