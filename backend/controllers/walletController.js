@@ -405,11 +405,6 @@ exports.approvePayment = async (req, res) => {
             ? WALLET_TYPES.BUSINESS
             : WALLET_TYPES.INVESTOR_BUSINESS; // Default wallet
 
-        // Determine target wallet (For Withdrawal: Use actual source wallet)
-        // MVP: Withdrawal usually from INCOME or BUSINESS wallet.
-        // Step 5995 requestWithdrawal uses INVESTOR_INCOME.
-        // We will default to INVESTOR_INCOME for Withdrawals if Investor.
-
         let targetWalletType = userWalletType;
         if (paymentRequest.type === 'WITHDRAWAL') {
             targetWalletType = WALLET_TYPES.INVESTOR_INCOME;
