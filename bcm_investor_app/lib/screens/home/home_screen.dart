@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> _projects = [];
   bool _isLoading = true;
   int _currentAdIndex = 0;
+  String _selectedReportType = 'Today\'s Buy';
   
   // Mock investment amounts per category
   final Map<String, double> _categoryInvestments = {
@@ -207,8 +208,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     
                     const SizedBox(height: 20),
                     
-                    // Today's Buy Table
-                    _buildTodaysBuyTable(),
+                    // Today's Report Table
+                    _buildTodaysReportsTable(),
                     
                     const SizedBox(height: 20),
                     
@@ -827,47 +828,54 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTodaysBuyTable() {
+  Widget _buildTodaysReportsTable() {
     final today = DateFormat('dd/MM/yyyy').format(DateTime.now());
     
-    // Mock data for today's buy transactions
-    final List<Map<String, dynamic>> todaysBuys = [
-      {
-        'txnId': '1256445',
-        'stocks': 'HDFC',
-        'quantity': 12,
-        'amount': 200,
-        'balance': 500,
-      },
-      {
-        'txnId': '4566',
-        'stocks': 'SBI',
-        'quantity': 10,
-        'amount': 100,
-        'balance': 300,
-      },
-      {
-        'txnId': '887752',
-        'stocks': 'INFY',
-        'quantity': 5,
-        'amount': 1500,
-        'balance': 200,
-      },
-      {
-        'txnId': '332156',
-        'stocks': 'REL', // Shortened for table fit
-        'quantity': 2,
-        'amount': 2400,
-        'balance': 100,
-      },
-      {
-        'txnId': '994411',
-        'stocks': 'TATA',
-        'quantity': 15,
-        'amount': 450,
-        'balance': 800,
-      },
-    ];
+    // Define columns and data based on selection
+    List<DataColumn> columns = [];
+    List<Map<String, dynamic>> data = [];
+    
+    if (_selectedReportType == 'Today\'s Buy') {
+      columns = const [
+        DataColumn(label: Text('Txn ID')),
+        DataColumn(label: Text('Stocks')),
+        DataColumn(label: Text('Quantity')),
+        DataColumn(label: Text('Amount')),
+        DataColumn(label: Text('Balance')),
+      ];
+      data = [
+        {'txnId': '1256445', 'stocks': 'HDFC', 'quantity': 12, 'amount': 200, 'balance': 500},
+        {'txnId': '4566', 'stocks': 'SBI', 'quantity': 10, 'amount': 100, 'balance': 300},
+        {'txnId': '887752', 'stocks': 'INFY', 'quantity': 5, 'amount': 1500, 'balance': 200},
+        {'txnId': '332156', 'stocks': 'REL', 'quantity': 2, 'amount': 2400, 'balance': 100},
+        {'txnId': '994411', 'stocks': 'TATA', 'quantity': 15, 'amount': 450, 'balance': 800},
+      ];
+    } else if (_selectedReportType == 'Today\'s Selling') {
+      columns = const [
+        DataColumn(label: Text('Txn ID')),
+        DataColumn(label: Text('Stocks')),
+        DataColumn(label: Text('Quantity')),
+        DataColumn(label: Text('Amount')),
+        DataColumn(label: Text('Balance')),
+      ];
+      data = [
+        {'txnId': '778899', 'stocks': 'ITC', 'quantity': 20, 'amount': 250, 'balance': 600},
+        {'txnId': '554433', 'stocks': 'WIPRO', 'quantity': 8, 'amount': 400, 'balance': 1200},
+      ];
+    } else {
+      // Top up / Withdrawal
+      columns = const [
+        DataColumn(label: Text('Txn ID')),
+        DataColumn(label: Text('Method')),
+        DataColumn(label: Text('Amount')),
+        DataColumn(label: Text('Status')),
+        DataColumn(label: Text('Date')),
+      ];
+      data = [
+        {'txnId': '112233', 'Method': 'UPI', 'Amount': 5000, 'Status': 'Success', 'Date': today},
+        {'txnId': '445566', 'Method': 'Bank', 'Amount': 10000, 'Status': 'Pending', 'Date': today},
+      ];
+    }
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -887,125 +895,140 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         child: Column(
           children: [
-            // Header with shopping cart icon
+            // Header with shopping cart icon and Dropdown
             Container(
               padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
                 color: AppTheme.greenAccent,
-                // Top radius handled by ClipRRect
               ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.shopping_cart,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Today\'s Buy',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _showDateRangePicker(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withOpacity(0.5)),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today, color: Colors.white, size: 14),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Date: $today',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+                    child: Icon(
+                      _selectedReportType.contains('selling') ? Icons.sell :
+                      _selectedReportType.contains('Top up') ? Icons.arrow_upward :
+                      _selectedReportType.contains('Withdrawal') ? Icons.arrow_downward :
+                      Icons.shopping_cart,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Dropdown Menu
+                  Expanded(
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        dropdownColor: AppTheme.greenAccent,
+                        value: _selectedReportType,
+                        icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Roboto', // Assuming default font
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
-                      ],
+                        isExpanded: true,
+                        items: [
+                          'Today\'s Buy',
+                          'Today\'s Selling', 
+                          'Today\'s Top up', 
+                          'Today\'s Withdrawal'
+                        ].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _selectedReportType = newValue;
+                            });
+                          }
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          // Table - Scrollable
-          Container(
-            constraints: const BoxConstraints(
-              maxHeight: 200, // Show approximately 3-4 rows at a time
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width - 34, // Screen width - (margin 16*2 + border 2)
-                  ),
-                  child: DataTable(
-                    key: ValueKey(todaysBuys.length), // Force rebuild if list changes
-                    headingRowColor: MaterialStateProperty.all(
-                      AppTheme.surfaceColor,
-                    ),
-                    dataRowColor: MaterialStateProperty.all(
-                      AppTheme.cardColor,
-                    ),
-                    headingTextStyle: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                    dataTextStyle: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 12,
-                    ),
-                    columnSpacing: 10, // Reduced spacing to fit better
-                    horizontalMargin: 8,
-                    columns: const [
-                      DataColumn(label: Text('Txn ID')),
-                      DataColumn(label: Text('Stocks')),
-                      DataColumn(label: Text('Quantity')),
-                      DataColumn(label: Text('Amount')),
-                      DataColumn(label: Text('Balance')),
-                    ],
-                    rows: todaysBuys.map((buy) {
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(buy['txnId'].toString())),
-                          DataCell(Text(buy['stocks'].toString())),
-                          DataCell(Text(buy['quantity'].toString())),
-                          DataCell(Text('₹${buy['amount']}')),
-                          DataCell(Text('₹${buy['balance']}')),
+                  GestureDetector(
+                    onTap: () => _showDateRangePicker(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white.withOpacity(0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today, color: Colors.white, size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Date: $today',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
                         ],
-                      );
-                    }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Table - Scrollable
+            Container(
+              constraints: const BoxConstraints(
+                maxHeight: 200,
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: MediaQuery.of(context).size.width - 34,
+                    ),
+                    child: DataTable(
+                      key: ValueKey(_selectedReportType + data.length.toString()),
+                      headingRowColor: MaterialStateProperty.all(
+                        AppTheme.surfaceColor,
+                      ),
+                      dataRowColor: MaterialStateProperty.all(
+                        AppTheme.cardColor,
+                      ),
+                      headingTextStyle: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                      dataTextStyle: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 12,
+                      ),
+                      columnSpacing: 10,
+                      horizontalMargin: 8,
+                      columns: columns,
+                      rows: data.map((item) {
+                        return DataRow(
+                          cells: item.values.map((v) => DataCell(Text(v.toString()))).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
