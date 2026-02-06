@@ -126,4 +126,10 @@ export const adminAPI = {
     getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
 };
 
+export const fdsAPI = {
+    getSchemes: () => api.get('/fds/schemes'),
+    createScheme: (data) => api.post('/fds/schemes', data),
+    updateStatus: (id, data) => api.patch(`/fds/schemes/${id}/status`, data),
+};
+
 export default api;

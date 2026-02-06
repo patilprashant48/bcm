@@ -35,6 +35,9 @@ import LoanManagement from './pages/Capital/LoanManagement';
 import FixedDeposits from './pages/Capital/FixedDeposits';
 import Partnerships from './pages/Capital/Partnerships';
 
+// FDS
+import SchemeMaster from './pages/FDS/SchemeMaster';
+
 // Reports
 import TransactionReports from './pages/Reports/TransactionReports';
 import UserActivity from './pages/Reports/UserActivity';
@@ -139,6 +142,9 @@ const AppRoutes = () => {
                 <Route path="capital/loans" element={<LoanManagement />} />
                 <Route path="capital/fds" element={<FixedDeposits />} />
                 <Route path="capital/partnerships" element={<Partnerships />} />
+
+                {/* FDS */}
+                <Route path="fds/schemes" element={<SchemeMaster />} />
 
                 {/* Reports */}
                 <Route path="reports/transactions" element={<TransactionReports />} />

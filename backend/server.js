@@ -36,6 +36,7 @@ app.use('/api/shares', require('./routes/share.routes'));
 app.use('/api/capital', require('./routes/capital.routes'));
 app.use('/api/plans', require('./routes/plan.routes'));
 app.use('/api/investor', require('./routes/investor.routes'));
+app.use('/api/fds', require('./routes/fds.routes'));
 
 // Health check
 app.get('/health', (req, res) => {

@@ -454,11 +454,11 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         carousel.CarouselSlider(
           options: carousel.CarouselOptions(
-            height: 120,
+            height: 150,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 3),
-            enlargeCenterPage: false,
-            viewportFraction: 1.0,
+            enlargeCenterPage: true,
+            viewportFraction: 0.92,
             onPageChanged: (index, reason) {
               setState(() {
                 _currentAdIndex = index;
@@ -477,15 +477,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width,
-                    margin: EdgeInsets.zero,
+                    margin: const EdgeInsets.symmetric(horizontal: 5.0),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
                           Color(int.parse(ad['color']!)),
                           Color(int.parse(ad['color']!)).withOpacity(0.7),
                         ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.zero,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -837,24 +846,54 @@ class _HomeScreenState extends State<HomeScreen> {
         'amount': 100,
         'balance': 300,
       },
+      {
+        'txnId': '887752',
+        'stocks': 'INFY',
+        'quantity': 5,
+        'amount': 1500,
+        'balance': 200,
+      },
+      {
+        'txnId': '332156',
+        'stocks': 'REL', // Shortened for table fit
+        'quantity': 2,
+        'amount': 2400,
+        'balance': 100,
+      },
+      {
+        'txnId': '994411',
+        'stocks': 'TATA',
+        'quantity': 15,
+        'amount': 450,
+        'balance': 800,
+      },
     ];
 
     return Container(
+      margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
-        border: Border(
-          top: BorderSide(color: AppTheme.greenAccent.withOpacity(0.3)),
-          bottom: BorderSide(color: AppTheme.greenAccent.withOpacity(0.3)),
-        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+        border: Border.all(color: AppTheme.greenAccent.withOpacity(0.3)),
       ),
-      child: Column(
-        children: [
-          // Header with shopping cart icon
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: AppTheme.greenAccent,
-            ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            // Header with shopping cart icon
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: AppTheme.greenAccent,
+                // Top radius handled by ClipRRect
+              ),
             child: Row(
               children: [
                 Container(
@@ -919,47 +958,54 @@ class _HomeScreenState extends State<HomeScreen> {
               scrollDirection: Axis.vertical,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  headingRowColor: MaterialStateProperty.all(
-                    AppTheme.surfaceColor,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: MediaQuery.of(context).size.width - 34, // Screen width - (margin 16*2 + border 2)
                   ),
-                  dataRowColor: MaterialStateProperty.all(
-                    AppTheme.cardColor,
+                  child: DataTable(
+                    key: ValueKey(todaysBuys.length), // Force rebuild if list changes
+                    headingRowColor: MaterialStateProperty.all(
+                      AppTheme.surfaceColor,
+                    ),
+                    dataRowColor: MaterialStateProperty.all(
+                      AppTheme.cardColor,
+                    ),
+                    headingTextStyle: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    dataTextStyle: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 12,
+                    ),
+                    columnSpacing: 10, // Reduced spacing to fit better
+                    horizontalMargin: 8,
+                    columns: const [
+                      DataColumn(label: Text('Txn ID')),
+                      DataColumn(label: Text('Stocks')),
+                      DataColumn(label: Text('Quantity')),
+                      DataColumn(label: Text('Amount')),
+                      DataColumn(label: Text('Balance')),
+                    ],
+                    rows: todaysBuys.map((buy) {
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(buy['txnId'].toString())),
+                          DataCell(Text(buy['stocks'].toString())),
+                          DataCell(Text(buy['quantity'].toString())),
+                          DataCell(Text('₹${buy['amount']}')),
+                          DataCell(Text('₹${buy['balance']}')),
+                        ],
+                      );
+                    }).toList(),
                   ),
-                  headingTextStyle: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                  dataTextStyle: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 12,
-                  ),
-                  columnSpacing: 20,
-                  horizontalMargin: 12,
-                  columns: const [
-                    DataColumn(label: Text('Txn ID')),
-                    DataColumn(label: Text('Stocks')),
-                    DataColumn(label: Text('Quantity')),
-                    DataColumn(label: Text('Amount')),
-                    DataColumn(label: Text('Balance')),
-                  ],
-                  rows: todaysBuys.map((buy) {
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(buy['txnId'].toString())),
-                        DataCell(Text(buy['stocks'].toString())),
-                        DataCell(Text(buy['quantity'].toString())),
-                        DataCell(Text('₹${buy['amount']}')),
-                        DataCell(Text('₹${buy['balance']}')),
-                      ],
-                    );
-                  }).toList(),
                 ),
               ),
             ),
           ),
         ],
+      ),
       ),
     );
   }

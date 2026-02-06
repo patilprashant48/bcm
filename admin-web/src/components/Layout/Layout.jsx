@@ -63,6 +63,14 @@ const Layout = () => {
             ]
         },
         {
+            id: 'fds',
+            title: 'FDS',
+            icon: '📜',
+            items: [
+                { name: 'Scheme Master', path: '/fds/schemes', icon: '📝' },
+            ]
+        },
+        {
             id: 'wallet',
             title: 'Wallet & Payments',
             icon: '💰',

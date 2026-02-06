@@ -11,6 +11,7 @@ const TransactionHistory = () => {
         dateTo: '',
         searchTerm: ''
     });
+    const [quickFilter, setQuickFilter] = useState('');
 
     useEffect(() => {
         loadTransactions();
@@ -45,7 +46,30 @@ const TransactionHistory = () => {
         const matchesDateTo = !filters.dateTo ||
             new Date(txn.created_at) <= new Date(filters.dateTo);
 
-        return matchesSearch && matchesDateFrom && matchesDateTo;
+        const matchesQuick = !quickFilter || (() => {
+            const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+            const txnDate = new Date(txn.created_at).toLocaleDateString('en-CA');
+            if (txnDate !== today) return false;
+
+            const ref = (txn.referenceType || txn.reference_type || '').toUpperCase();
+            const desc = (txn.description || '').toLowerCase();
+            const type = (txn.type || '').toUpperCase();
+
+            switch (quickFilter) {
+                case 'TODAY_BUY':
+                    return (type === 'DEBIT' || type === 'INVESTMENT') && (ref === 'INVESTMENT' || desc.includes('buy') || desc.includes('invest'));
+                case 'TODAY_SELL':
+                    return (type === 'CREDIT' || type === 'RETURN') && (ref === 'INVESTMENT' || desc.includes('sell') || desc.includes('sale'));
+                case 'TODAY_TOPUP':
+                    return type === 'CREDIT' && (ref === 'TOPUP' || desc.includes('top') || desc.includes('deposit'));
+                case 'TODAY_WITHDRAWAL':
+                    return type === 'DEBIT' && (ref === 'WITHDRAWAL' || ref === 'PAYOUT' || desc.includes('withdraw'));
+                default:
+                    return true;
+            }
+        })();
+
+        return matchesSearch && matchesDateFrom && matchesDateTo && matchesQuick;
     });
 
     if (loading) {
@@ -114,6 +138,21 @@ const TransactionHistory = () => {
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Quick Filter</label>
+                        <select
+                            value={quickFilter}
+                            onChange={(e) => setQuickFilter(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+                        >
+                            <option value="">Select Quick Filter</option>
+                            <option value="TODAY_BUY">Today's Buy</option>
+                            <option value="TODAY_SELL">Today's Selling</option>
+                            <option value="TODAY_TOPUP">Today's Top Up</option>
+                            <option value="TODAY_WITHDRAWAL">Today's Withdrawal</option>
+                        </select>
+                    </div>
                 </div>
                 <div className="mt-4 flex gap-2">
                     <button
@@ -123,7 +162,10 @@ const TransactionHistory = () => {
                         Apply Filters
                     </button>
                     <button
-                        onClick={() => setFilters({ type: 'ALL', dateFrom: '', dateTo: '', searchTerm: '' })}
+                        onClick={() => {
+                            setFilters({ type: 'ALL', dateFrom: '', dateTo: '', searchTerm: '' });
+                            setQuickFilter('');
+                        }}
                         className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition-colors duration-200 font-medium"
                     >
                         Clear
@@ -167,54 +209,56 @@ const TransactionHistory = () => {
             </div>
 
             {/* Transaction List */}
-            {filteredTransactions.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-md p-12 text-center">
-                    <div className="text-6xl mb-4">📜</div>
-                    <p className="text-xl text-gray-600">No transactions found</p>
-                </div>
-            ) : (
-                <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredTransactions.map((txn) => (
-                                <tr key={txn.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {new Date(txn.created_at).toLocaleString()}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {txn.user_email || 'N/A'}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-900">
-                                        {txn.description || 'No description'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${txn.type === 'CREDIT' ? 'bg-green-100 text-green-800' :
+            {
+                filteredTransactions.length === 0 ? (
+                    <div className="bg-white rounded-xl shadow-md p-12 text-center">
+                        <div className="text-6xl mb-4">📜</div>
+                        <p className="text-xl text-gray-600">No transactions found</p>
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredTransactions.map((txn) => (
+                                    <tr key={txn.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {new Date(txn.created_at).toLocaleString()}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {txn.user_email || 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-900">
+                                            {txn.description || 'No description'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${txn.type === 'CREDIT' ? 'bg-green-100 text-green-800' :
                                                 txn.type === 'DEBIT' ? 'bg-red-100 text-red-800' :
                                                     'bg-blue-100 text-blue-800'
+                                                }`}>
+                                                {txn.type}
+                                            </span>
+                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${txn.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'
                                             }`}>
-                                            {txn.type}
-                                        </span>
-                                    </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${txn.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'
-                                        }`}>
-                                        {txn.type === 'CREDIT' ? '+' : '-'}₹{(txn.amount || 0).toLocaleString()}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
+                                            {txn.type === 'CREDIT' ? '+' : '-'}₹{(txn.amount || 0).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

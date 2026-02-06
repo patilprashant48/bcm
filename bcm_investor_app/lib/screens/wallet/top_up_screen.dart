@@ -88,7 +88,10 @@ class _TopUpScreenState extends State<TopUpScreen> {
               children: [
                 const Icon(Icons.check_circle, color: Colors.green, size: 64),
                 const SizedBox(height: 16),
-                const Text('Your top-up request is PENDING. It will be processed after admin approval.'),
+                Text(
+                  'Your Top-up request ${_amountController.text}/- is submitted successfully. It will be processed after Admin approval.',
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
             actions: [
@@ -140,14 +143,17 @@ class _TopUpScreenState extends State<TopUpScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Request Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Text('Request Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), // Keeps default (white) on dark bg
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _amountController,
                             keyboardType: TextInputType.number,
+                            style: const TextStyle(color: Colors.black), // Input text color
                             decoration: const InputDecoration(
                               labelText: 'Amount',
+                              labelStyle: TextStyle(color: Colors.black54), // Label color
                               prefixText: '₹',
+                              prefixStyle: TextStyle(color: Colors.black),
                               border: OutlineInputBorder(),
                               filled: true,
                               fillColor: Colors.white,
@@ -157,8 +163,10 @@ class _TopUpScreenState extends State<TopUpScreen> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _txnIdController,
+                            style: const TextStyle(color: Colors.black), // Input text color
                             decoration: const InputDecoration(
                               labelText: 'Transaction ID (Ref No./UTR)',
+                              labelStyle: TextStyle(color: Colors.black54), // Label color
                               border: OutlineInputBorder(),
                               filled: true,
                               fillColor: Colors.white,
@@ -236,9 +244,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Text(
+          const Text(
             'Send Payment To',
-            style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.bold, fontSize: 16),
+            style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 16),
           if (_selectedMethod == 'UPI') ...[
@@ -264,12 +272,12 @@ class _TopUpScreenState extends State<TopUpScreen> {
                    Column(
                      crossAxisAlignment: CrossAxisAlignment.start,
                      children: [
-                       const Text('UPI ID', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                       Text(_paymentDetails!['company_upi_id'] ?? 'N/A', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                       const Text('UPI ID', style: TextStyle(fontSize: 12, color: Colors.black87)),
+                       Text(_paymentDetails!['company_upi_id'] ?? 'N/A', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
                      ],
                    ),
                    IconButton(
-                     icon: const Icon(Icons.copy),
+                     icon: const Icon(Icons.copy, color: Colors.black54),
                      onPressed: () {
                         Clipboard.setData(ClipboardData(text: _paymentDetails!['company_upi_id'] ?? ''));
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('UPI ID Copied')));
@@ -308,13 +316,13 @@ class _TopUpScreenState extends State<TopUpScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
+          Text(label, style: const TextStyle(color: Colors.black87)),
           Row(
             children: [
-              Text(value ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(value ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
               if (isCopyable)
                 IconButton(
-                  icon: const Icon(Icons.copy, size: 20),
+                  icon: const Icon(Icons.copy, size: 20, color: Colors.black54),
                   onPressed: () {
                      Clipboard.setData(ClipboardData(text: value ?? ''));
                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label Copied')));

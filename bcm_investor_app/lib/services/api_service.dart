@@ -165,6 +165,20 @@ class ApiService {
     }
   }
 
+  Future<List<dynamic>> getPaymentRequests() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/wallet/payment-requests'),
+      headers: await _getHeaders(),
+    );
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['requests'] ?? [];
+    } else {
+      throw Exception('Failed to get payment requests');
+    }
+  }
+
   Future<void> withdrawWallet(double amount) async {
     final response = await http.post(
       Uri.parse('$baseUrl/wallet/withdraw'),

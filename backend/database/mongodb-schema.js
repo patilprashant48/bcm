@@ -391,6 +391,39 @@ const watchlistSchema = new mongoose.Schema({
 watchlistSchema.index({ userId: 1, projectId: 1 }, { unique: true });
 
 // =====================================================
+// FDS (Fixed Deposit Scheme) SCHEMAS
+// =====================================================
+
+const fdSchemeSchema = new mongoose.Schema({
+    schemeId: { type: String, unique: true, required: true },
+    name: { type: String, required: true },
+    minAmount: { type: Number, required: true },
+    interestCalculationDays: { type: Number, required: true },
+    interestTransferType: [{
+        type: String,
+        enum: ['SCHEME', 'MAIN', 'INCOME']
+    }],
+    interestDivision: {
+        scheme: { type: Number, default: 0 },
+        mainWallet: { type: Number, default: 0 },
+        incomeWallet: { type: Number, default: 0 }
+    },
+    transferScheduleDays: { type: Number },
+    maturityDays: { type: Number, required: true },
+    maturityTransferDivision: {
+        mainWallet: { type: Number, default: 0 },
+        incomeWallet: { type: Number, default: 0 }
+    },
+    taxDeductionPercent: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
+    isPublished: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+fdSchemeSchema.index({ schemeId: 1 });
+
+// =====================================================
 // EXPORT MODELS
 // =====================================================
 
@@ -416,5 +449,6 @@ module.exports = {
     Notification: mongoose.model('Notification', notificationSchema),
     Announcement: mongoose.model('Announcement', announcementSchema),
     PlatformSetting: mongoose.model('PlatformSetting', platformSettingSchema),
-    Watchlist: mongoose.model('Watchlist', watchlistSchema)
+    Watchlist: mongoose.model('Watchlist', watchlistSchema),
+    FDScheme: mongoose.model('FDScheme', fdSchemeSchema)
 };
