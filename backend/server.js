@@ -15,7 +15,9 @@ app.use(cors({
             'http://localhost:3000',  // Admin Web
             'http://localhost:3001',  // Business Web
             'http://localhost:5173',  // Vite default
-            'http://localhost:5174'   // Vite default
+            'http://localhost:5174',   // Vite default
+            'https://bcm-theta.vercel.app', // Admin Vercel
+            'https://business-web-orcin.vercel.app' // Business Vercel
         ],
     credentials: true
 }));
