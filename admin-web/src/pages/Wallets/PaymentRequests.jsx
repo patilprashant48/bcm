@@ -33,7 +33,8 @@ const PaymentRequests = () => {
             loadRequests(); // Reload list
         } catch (error) {
             console.error('Failed to approve payment:', error);
-            alert('Failed to approve payment. Please try again.');
+            const msg = error.response?.data?.message || 'Failed to approve payment. Please try again.';
+            alert(msg);
         }
     };
 
@@ -83,8 +84,8 @@ const PaymentRequests = () => {
                         key={status}
                         onClick={() => setFilter(status)}
                         className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${filter === status
-                                ? 'bg-blue-600 text-white shadow-lg scale-105'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-sm'
+                            ? 'bg-blue-600 text-white shadow-lg scale-105'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-sm'
                             }`}
                     >
                         {status}
@@ -120,8 +121,8 @@ const PaymentRequests = () => {
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="text-sm text-gray-600">Payment Method:</span>
                                     <span className={`text-xs px-3 py-1 rounded-full font-medium ${request.payment_method === 'UPI'
-                                            ? 'bg-blue-100 text-blue-800'
-                                            : 'bg-purple-100 text-purple-800'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-purple-100 text-purple-800'
                                         }`}>
                                         {request.payment_method === 'UPI' ? '💳 UPI' : '🏦 Bank Transfer'}
                                     </span>

@@ -434,7 +434,7 @@ exports.approvePayment = async (req, res) => {
         );
 
         if (!userWalletResult.success) {
-            throw new Error('Failed to get user wallet');
+            throw new Error(userWalletResult.error || 'Failed to get user wallet');
         }
 
         let transactionResult;
