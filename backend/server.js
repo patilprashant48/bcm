@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/mongodb');
 const automationService = require('./services/automationService');
+const { job: dailyInterestJob } = require('./cron/dailyInterest');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -118,7 +119,8 @@ const startServer = async () => {
             // Start automation services
             if (process.env.NODE_ENV === 'production') {
                 automationService.startAll();
-                console.log('✓ Automation services started');
+                dailyInterestJob.start();
+                console.log('✓ Automation services & Daily Interest Job started');
             } else {
                 console.log('⚠ Automation services disabled in development mode');
                 console.log('  To enable, set NODE_ENV=production');
