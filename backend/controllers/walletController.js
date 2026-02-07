@@ -428,6 +428,20 @@ exports.approvePayment = async (req, res) => {
 
         console.log(`Approving Payment: RequestID=${requestId}, User=${paymentRequest.userId.email}, Role=${userRole}, Type=${paymentRequest.type}, TargetWallet=${targetWalletType}`);
 
+        // Bypass ledger for demo account
+        if (paymentRequest.userId.email === 'investor@test.com') {
+            paymentRequest.status = PAYMENT_STATUS.APPROVED;
+            paymentRequest.adminId = adminId;
+            paymentRequest.processedAt = new Date();
+            await paymentRequest.save();
+
+            return res.json({
+                success: true,
+                message: 'Payment approved for Demo Investor',
+                newBalance: 0
+            });
+        }
+
         const userWalletResult = await ledgerService.getWallet(
             paymentRequest.userId._id,
             targetWalletType
