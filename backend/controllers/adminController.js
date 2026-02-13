@@ -352,3 +352,330 @@ exports.getDashboardStats = async (req, res) => {
         });
     }
 };
+
+// Additional admin controller methods
+
+exports.getBusinessDetails = async (req, res) => {
+    try {
+        const business = await Business.findById(req.params.id).populate('userId', 'name email mobile');
+        if (!business) {
+            return res.status(404).json({ success: false, message: 'Business not found' });
+        }
+        res.json({ success: true, business });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get business details', error: error.message });
+    }
+};
+
+exports.deactivateBusiness = async (req, res) => {
+    try {
+        const business = await Business.findByIdAndUpdate(req.params.id, { approvalStatus: 'INACTIVE' }, { new: true });
+        res.json({ success: true, message: 'Business deactivated', business });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to deactivate business', error: error.message });
+    }
+};
+
+exports.reactivateBusiness = async (req, res) => {
+    try {
+        const business = await Business.findByIdAndUpdate(req.params.id, { approvalStatus: 'ACTIVE' }, { new: true });
+        res.json({ success: true, message: 'Business reactivated', business });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to reactivate business', error: error.message });
+    }
+};
+
+exports.getLiveProjects = async (req, res) => {
+    try {
+        const projects = await Project.find({ status: 'LIVE' }).populate('userId', 'email mobile').sort({ liveAt: -1 });
+        res.json({ success: true, projects });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get live projects', error: error.message });
+    }
+};
+
+exports.getClosedProjects = async (req, res) => {
+    try {
+        const projects = await Project.find({ status: 'CLOSED' }).populate('userId', 'email mobile').sort({ closedAt: -1 });
+        res.json({ success: true, projects });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get closed projects', error: error.message });
+    }
+};
+
+exports.closeProject = async (req, res) => {
+    try {
+        const project = await Project.findByIdAndUpdate(req.params.id, { status: 'CLOSED', closedAt: new Date() }, { new: true });
+        res.json({ success: true, message: 'Project closed', project });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to close project', error: error.message });
+    }
+};
+
+exports.getCustomers = async (req, res) => {
+    try {
+        const customers = await User.find({ role: { $in: ['INVESTOR', 'BUSINESS_USER'] } }).select('-password').sort({ createdAt: -1 });
+        res.json({ success: true, customers });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get customers', error: error.message });
+    }
+};
+
+exports.suspendCustomer = async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(req.params.id, { status: 'SUSPENDED' }, { new: true });
+        res.json({ success: true, message: 'Customer suspended', user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to suspend customer', error: error.message });
+    }
+};
+
+exports.activateCustomer = async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(req.params.id, { status: 'ACTIVE' }, { new: true });
+        res.json({ success: true, message: 'Customer activated', user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to activate customer', error: error.message });
+    }
+};
+
+exports.getKYCRequests = async (req, res) => {
+    try {
+        const KYC = models.KYC || models.User;
+        const kycs = await KYC.find({}).populate('userId', 'name email').sort({ createdAt: -1 });
+        res.json({ success: true, kycs });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get KYC requests', error: error.message });
+    }
+};
+
+exports.approveKYC = async (req, res) => {
+    try {
+        const KYC = models.KYC;
+        const kyc = await KYC.findByIdAndUpdate(req.params.id, { status: 'APPROVED', approvedAt: new Date() }, { new: true });
+        res.json({ success: true, message: 'KYC approved', kyc });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to approve KYC', error: error.message });
+    }
+};
+
+exports.rejectKYC = async (req, res) => {
+    try {
+        const KYC = models.KYC;
+        const kyc = await KYC.findByIdAndUpdate(req.params.id, { status: 'REJECTED', rejectedAt: new Date() }, { new: true });
+        res.json({ success: true, message: 'KYC rejected', kyc });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to reject KYC', error: error.message });
+    }
+};
+
+exports.getPlans = async (req, res) => {
+    try {
+        const Plan = models.Plan;
+        const plans = await Plan.find({}).sort({ createdAt: -1 });
+        res.json({ success: true, plans });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get plans', error: error.message });
+    }
+};
+
+exports.createPlan = async (req, res) => {
+    try {
+        const Plan = models.Plan;
+        const plan = new Plan(req.body);
+        await plan.save();
+        res.json({ success: true, message: 'Plan created', plan });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to create plan', error: error.message });
+    }
+};
+
+exports.updatePlan = async (req, res) => {
+    try {
+        const Plan = models.Plan;
+        const plan = await Plan.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json({ success: true, message: 'Plan updated', plan });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to update plan', error: error.message });
+    }
+};
+
+exports.deletePlan = async (req, res) => {
+    try {
+        const Plan = models.Plan;
+        await Plan.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Plan deleted' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to delete plan', error: error.message });
+    }
+};
+
+exports.getSettings = async (req, res) => {
+    try {
+        const PlatformSetting = models.PlatformSetting;
+        const settings = await PlatformSetting.find({});
+        res.json({ success: true, settings });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get settings', error: error.message });
+    }
+};
+
+exports.updateSettings = async (req, res) => {
+    try {
+        const PlatformSetting = models.PlatformSetting;
+        const updates = req.body;
+        for (const key in updates) {
+            await PlatformSetting.findOneAndUpdate({ settingKey: key }, { settingValue: updates[key] }, { upsert: true });
+        }
+        res.json({ success: true, message: 'Settings updated' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to update settings', error: error.message });
+    }
+};
+
+exports.getShares = async (req, res) => {
+    try {
+        const SharesOffering = models.SharesOffering;
+        const shares = await SharesOffering.find({}).populate('businessId', 'businessName').sort({ createdAt: -1 });
+        res.json({ success: true, shares });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get shares', error: error.message });
+    }
+};
+
+exports.approveShare = async (req, res) => {
+    try {
+        const SharesOffering = models.SharesOffering;
+        const share = await SharesOffering.findByIdAndUpdate(req.params.id, { approvalStatus: 'APPROVED', approvedAt: new Date() }, { new: true });
+        res.json({ success: true, message: 'Share offering approved', share });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to approve share', error: error.message });
+    }
+};
+
+exports.rejectShare = async (req, res) => {
+    try {
+        const SharesOffering = models.SharesOffering;
+        const share = await SharesOffering.findByIdAndUpdate(req.params.id, { approvalStatus: 'REJECTED', rejectedAt: new Date() }, { new: true });
+        res.json({ success: true, message: 'Share offering rejected', share });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to reject share', error: error.message });
+    }
+};
+
+exports.getLoans = async (req, res) => {
+    try {
+        const LoanRequest = models.LoanRequest;
+        const loans = await LoanRequest.find({}).populate('businessId', 'businessName').sort({ createdAt: -1 });
+        res.json({ success: true, loans });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get loans', error: error.message });
+    }
+};
+
+exports.getFDs = async (req, res) => {
+    try {
+        const FDScheme = models.FDScheme;
+        const fds = await FDScheme.find({}).populate('businessId', 'businessName').sort({ createdAt: -1 });
+        res.json({ success: true, fds });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get FDs', error: error.message });
+    }
+};
+
+exports.getPartnerships = async (req, res) => {
+    try {
+        const Partnership = models.Partnership;
+        const partnerships = await Partnership.find({}).populate('businessId', 'businessName').sort({ createdAt: -1 });
+        res.json({ success: true, partnerships });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get partnerships', error: error.message });
+    }
+};
+
+exports.getAdmins = async (req, res) => {
+    try {
+        const admins = await User.find({ role: 'ADMIN' }).select('-password').sort({ createdAt: -1 });
+        res.json({ success: true, admins });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get admins', error: error.message });
+    }
+};
+
+exports.createAdmin = async (req, res) => {
+    try {
+        const bcrypt = require('bcryptjs');
+        const { name, email, password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const admin = new User({ name, email, password: hashedPassword, role: 'ADMIN', status: 'ACTIVE' });
+        await admin.save();
+        res.json({ success: true, message: 'Admin created', admin: { id: admin._id, name, email } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to create admin', error: error.message });
+    }
+};
+
+exports.updateAdminStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const admin = await User.findByIdAndUpdate(req.params.id, { status }, { new: true }).select('-password');
+        res.json({ success: true, message: 'Admin status updated', admin });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to update admin status', error: error.message });
+    }
+};
+
+exports.getAuditLogs = async (req, res) => {
+    try {
+        const AuditLog = models.AuditLog || models.Transaction;
+        const logs = await AuditLog.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).limit(100);
+        res.json({ success: true, logs });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get audit logs', error: error.message });
+    }
+};
+
+exports.sendNotification = async (req, res) => {
+    try {
+        const { userId, title, message, type } = req.body;
+        const Notification = models.Notification;
+        const notification = new Notification({ userId, title, message, type, createdAt: new Date() });
+        await notification.save();
+        res.json({ success: true, message: 'Notification sent', notification });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to send notification', error: error.message });
+    }
+};
+
+exports.getTransactionReports = async (req, res) => {
+    try {
+        const Transaction = models.Transaction;
+        const { startDate, endDate } = req.query;
+        const filter = {};
+        if (startDate) filter.createdAt = { $gte: new Date(startDate) };
+        if (endDate) filter.createdAt = { ...filter.createdAt, $lte: new Date(endDate) };
+        const transactions = await Transaction.find(filter).populate('userId', 'name email').sort({ createdAt: -1 });
+        res.json({ success: true, transactions });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get transaction reports', error: error.message });
+    }
+};
+
+exports.exportTransactionReport = async (req, res) => {
+    try {
+        const Transaction = models.Transaction;
+        const { startDate, endDate } = req.query;
+        const filter = {};
+        if (startDate) filter.createdAt = { $gte: new Date(startDate) };
+        if (endDate) filter.createdAt = { ...filter.createdAt, $lte: new Date(endDate) };
+        const transactions = await Transaction.find(filter).populate('userId', 'name email').sort({ createdAt: -1 });
+        
+        // Convert to CSV format
+        const csv = transactions.map(t => `${t._id},${t.userId?.email},${t.type},${t.amount},${t.createdAt}`).join('\n');
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="transactions.csv"');
+        res.send('ID,User Email,Type,Amount,Date\n' + csv);
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to export transaction report', error: error.message });
+    }
+};

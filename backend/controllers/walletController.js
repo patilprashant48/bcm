@@ -610,3 +610,157 @@ exports.getPlatformPaymentDetails = async (req, res) => {
         });
     }
 };
+
+/**
+ * Get all transactions (Admin only)
+ */
+exports.getAllTransactions = async (req, res) => {
+    try {
+        const { page = 1, limit = 50, userId, type, status } = req.query;
+
+        const filter = {};
+        if (userId) filter.userId = userId;
+        if (type) filter.type = type;
+        if (status) filter.status = status;
+
+        const transactions = await models.Transaction.find(filter)
+            .populate('userId', 'name email')
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await models.Transaction.countDocuments(filter);
+
+        res.json({
+            success: true,
+            transactions,
+            pagination: {
+                total,
+                page: parseInt(page),
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        console.error('Get all transactions error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get transactions',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get admin wallet balance
+ */
+exports.getAdminWallet = async (req, res) => {
+    try {
+        // Get admin user
+        const adminUser = await models.User.findById(req.user.id);
+        if (!adminUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Admin user not found'
+            });
+        }
+
+        // Get admin wallet balances
+        const result = await ledgerService.getUserWallets(req.user.id);
+
+        res.json({
+            success: true,
+            wallet: {
+                userId: req.user.id,
+                user: {
+                    name: adminUser.name,
+                    email: adminUser.email
+                },
+                wallets: result.wallets || []
+            }
+        });
+    } catch (error) {
+        console.error('Get admin wallet error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get admin wallet',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get admin wallet transactions
+ */
+exports.getAdminTransactions = async (req, res) => {
+    try {
+        const { page = 1, limit = 50 } = req.query;
+
+        const transactions = await models.Transaction.find({ userId: req.user.id })
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await models.Transaction.countDocuments({ userId: req.user.id });
+
+        res.json({
+            success: true,
+            transactions,
+            pagination: {
+                total,
+                page: parseInt(page),
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        console.error('Get admin transactions error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get admin transactions',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Top up admin wallet
+ */
+exports.topUpAdminWallet = async (req, res) => {
+    try {
+        const { amount, walletType = 'MAIN', description = 'Admin wallet top-up' } = req.body;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid amount'
+            });
+        }
+
+        // Create a credit transaction for admin wallet
+        const result = await ledgerService.createTransaction({
+            userId: req.user.id,
+            type: 'CREDIT',
+            amount: parseFloat(amount),
+            walletType: walletType,
+            referenceType: REFERENCE_TYPES.ADMIN_TOPUP,
+            description: description,
+            status: 'COMPLETED'
+        });
+
+        if (!result.success) {
+            throw new Error(result.error);
+        }
+
+        res.json({
+            success: true,
+            message: 'Admin wallet topped up successfully',
+            transaction: result.transaction
+        });
+    } catch (error) {
+        console.error('Top up admin wallet error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to top up admin wallet',
+            error: error.message
+        });
+    }
+};
