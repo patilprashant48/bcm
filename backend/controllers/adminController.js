@@ -414,15 +414,40 @@ exports.closeProject = async (req, res) => {
 
 exports.getCustomers = async (req, res) => {
     try {
-        const customers = await User.find({ role: { $in: ['INVESTOR', 'BUSINESS_USER'] } }).select('-password').sort({ createdAt: -1 });
+        const users = await User.find({ role: { $in: ['INVESTOR', 'BUSINESS_USER'] } })
+            .select('-passwordHash')
+            .sort({ createdAt: -1 })
+            .lean();
+        
+        // Transform data to match frontend expectations
+        const customers = users.map(user => ({
+            id: user._id.toString(),
+            _id: user._id,
+            email: user.email,
+            mobile: user.mobile,
+            role: user.role,
+            name: user.fullName || user.email?.split('@')[0] || 'N/A',
+            status: user.isActive ? 'ACTIVE' : 'SUSPENDED',
+            isActive: user.isActive,
+            kyc_status: user.kycStatus || 'NOT_SUBMITTED',
+            total_invested: user.totalInvested || 0,
+            created_at: user.createdAt,
+            updated_at: user.updatedAt
+        }));
+        
         res.json({ success: true, customers });
     } catch (error) {
+        console.error('Get customers error:', error);
         res.status(500).json({ success: false, message: 'Failed to get customers', error: error.message });
     }
 };
 
 exports.suspendCustomer = async (req, res) => {
     try {
+        if (!req.params.id || req.params.id === 'undefined') {
+            return res.status(400).json({ success: false, message: 'Invalid customer ID' });
+        }
+        
         const user = await User.findByIdAndUpdate(
             req.params.id, 
             { isActive: false, updatedAt: new Date() }, 
@@ -442,6 +467,10 @@ exports.suspendCustomer = async (req, res) => {
 
 exports.activateCustomer = async (req, res) => {
     try {
+        if (!req.params.id || req.params.id === 'undefined') {
+            return res.status(400).json({ success: false, message: 'Invalid customer ID' });
+        }
+        
         const user = await User.findByIdAndUpdate(
             req.params.id, 
             { isActive: true, updatedAt: new Date() }, 
