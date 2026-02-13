@@ -397,6 +397,7 @@ watchlistSchema.index({ userId: 1, projectId: 1 }, { unique: true });
 const fdSchemeSchema = new mongoose.Schema({
     schemeId: { type: String, unique: true, required: true },
     name: { type: String, required: true },
+    interestPercent: { type: Number, required: true }, // Annual interest rate percentage
     minAmount: { type: Number, required: true },
     interestCalculationDays: { type: Number, required: true },
     interestTransferType: [{
