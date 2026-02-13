@@ -423,18 +423,38 @@ exports.getCustomers = async (req, res) => {
 
 exports.suspendCustomer = async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(req.params.id, { status: 'SUSPENDED' }, { new: true });
-        res.json({ success: true, message: 'Customer suspended', user });
+        const user = await User.findByIdAndUpdate(
+            req.params.id, 
+            { isActive: false, updatedAt: new Date() }, 
+            { new: true }
+        ).select('-passwordHash');
+        
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Customer not found' });
+        }
+        
+        res.json({ success: true, message: 'Customer suspended successfully', user });
     } catch (error) {
+        console.error('Suspend customer error:', error);
         res.status(500).json({ success: false, message: 'Failed to suspend customer', error: error.message });
     }
 };
 
 exports.activateCustomer = async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(req.params.id, { status: 'ACTIVE' }, { new: true });
-        res.json({ success: true, message: 'Customer activated', user });
+        const user = await User.findByIdAndUpdate(
+            req.params.id, 
+            { isActive: true, updatedAt: new Date() }, 
+            { new: true }
+        ).select('-passwordHash');
+        
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Customer not found' });
+        }
+        
+        res.json({ success: true, message: 'Customer activated successfully', user });
     } catch (error) {
+        console.error('Activate customer error:', error);
         res.status(500).json({ success: false, message: 'Failed to activate customer', error: error.message });
     }
 };
@@ -607,9 +627,15 @@ exports.createAdmin = async (req, res) => {
         const bcrypt = require('bcryptjs');
         const { name, email, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const admin = new User({ name, email, password: hashedPassword, role: 'ADMIN', status: 'ACTIVE' });
+        const admin = new User({ 
+            email, 
+            passwordHash: hashedPassword, 
+            role: 'ADMIN', 
+            isActive: true,
+            mobile: req.body.mobile || null
+        });
         await admin.save();
-        res.json({ success: true, message: 'Admin created', admin: { id: admin._id, name, email } });
+        res.json({ success: true, message: 'Admin created', admin: { id: admin._id, email } });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to create admin', error: error.message });
     }
@@ -617,8 +643,17 @@ exports.createAdmin = async (req, res) => {
 
 exports.updateAdminStatus = async (req, res) => {
     try {
-        const { status } = req.body;
-        const admin = await User.findByIdAndUpdate(req.params.id, { status }, { new: true }).select('-password');
+        const { isActive } = req.body;
+        const admin = await User.findByIdAndUpdate(
+            req.params.id, 
+            { isActive: isActive === true || isActive === 'true', updatedAt: new Date() }, 
+            { new: true }
+        ).select('-passwordHash');
+        
+        if (!admin) {
+            return res.status(404).json({ success: false, message: 'Admin not found' });
+        }
+        
         res.json({ success: true, message: 'Admin status updated', admin });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to update admin status', error: error.message });
