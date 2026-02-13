@@ -24,4 +24,10 @@ router.get('/my-plan', authenticateToken, async (req, res) => {
     res.json({ success: true, plan: null });
 });
 
+// Alias for business panel compatibility
+router.get('/business/active-plan', authenticateToken, async (req, res) => {
+    // TODO: Get user's active plan
+    res.json({ success: true, plan: null });
+});
+
 module.exports = router;

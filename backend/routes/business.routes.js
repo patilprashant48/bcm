@@ -19,4 +19,31 @@ router.get('/projects/:id', authenticateToken, isBusinessUser, projectController
 router.put('/projects/:id', authenticateToken, isBusinessUser, projectController.updateProject);
 router.delete('/projects/:id', authenticateToken, isBusinessUser, projectController.deleteProject);
 
+// Capital tool routes for business users
+router.post('/capital/shares', authenticateToken, isBusinessUser, async (req, res) => {
+    // TODO: Create share offering
+    res.json({ success: true, message: 'Share offering created successfully' });
+});
+
+router.post('/capital/loans', authenticateToken, isBusinessUser, async (req, res) => {
+    // TODO: Create loan offering
+    res.json({ success: true, message: 'Loan offering created successfully' });
+});
+
+router.post('/capital/partnerships', authenticateToken, isBusinessUser, async (req, res) => {
+    // TODO: Create partnership offering
+    res.json({ success: true, message: 'Partnership offering created successfully' });
+});
+
+router.get('/capital', authenticateToken, isBusinessUser, async (req, res) => {
+    // TODO: Get all capital tools for business
+    res.json({ success: true, capitalTools: [] });
+});
+
+// Active plan route for business panel  
+router.get('/active-plan', authenticateToken, isBusinessUser, async (req, res) => {
+    // TODO: Get business user's active plan
+    res.json({ success: true, plan: null });
+});
+
 module.exports = router;

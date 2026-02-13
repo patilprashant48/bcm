@@ -171,3 +171,127 @@ exports.getAnnouncements = async (req, res) => {
         });
     }
 };
+
+/**
+ * Get project details by ID
+ */
+exports.getProjectDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const project = await Project.findById(id)
+            .populate('userId', 'email mobile name');
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: 'Project not found'
+            });
+        }
+
+        // Calculate raised capital from investments
+        const investments = await Investment.find({ projectId: id });
+        const raisedCapital = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+        res.json({
+            success: true,
+            project: {
+                id: project._id,
+                project_name: project.projectName,
+                campaign_name: project.campaignName,
+                description: project.description,
+                project_type: project.projectType,
+                category: project.category,
+                target_amount: project.requiredCapital,
+                raised_amount: raisedCapital,
+                min_investment: project.minInvestment || 1000,
+                location: project.location,
+                start_date: project.startDate,
+                end_date: project.endDate,
+                status: project.status,
+                business_name: project.userId?.name || project.userId?.email,
+                business_owner: project.userId?.name,
+                created_at: project.createdAt,
+                updated_at: project.updatedAt,
+                investors_count: investments.length
+            }
+        });
+    } catch (error) {
+        console.error('Get project details error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch project details',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Buy shares/invest in project
+ */
+exports.buyShares = async (req, res) => {
+    try {
+        const { projectId, amount, investmentType } = req.body;
+        const userId = req.user.id;
+
+        // Validate project exists and is live
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: 'Project not found'
+            });
+        }
+
+        if (project.status !== 'LIVE') {
+            return res.status(400).json({
+                success: false,
+                message: 'Project is not accepting investments'
+            });
+        }
+
+        // Check minimum investment
+        if (amount < (project.minInvestment || 1000)) {
+            return res.status(400).json({
+                success: false,
+                message: `Minimum investment is ₹${project.minInvestment || 1000}`
+            });
+        }
+
+        // TODO: Check wallet balance
+        // TODO: Deduct from wallet
+        
+        // Create investment record
+        const investment = new Investment({
+            userId: userId,
+            projectId: projectId,
+            amount: parseFloat(amount),
+            investmentType: investmentType || 'EQUITY',
+            status: 'ACTIVE',
+            investmentDate: new Date()
+        });
+
+        await investment.save();
+
+        // TODO: Update project raised capital
+        // TODO: Create wallet transaction
+
+        res.json({
+            success: true,
+            message: 'Investment successful',
+            investment: {
+                id: investment._id,
+                amount: investment.amount,
+                project_name: project.projectName,
+                investment_date: investment.investmentDate
+            }
+        });
+    } catch (error) {
+        console.error('Buy shares error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Investment failed',
+            error: error.message
+        });
+    }
+};
