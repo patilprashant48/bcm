@@ -70,7 +70,10 @@ const CapitalTools = () => {
             setShowModal(false);
             setFormData({});
         } catch (error) {
-            alert('Failed to create FD scheme. Please try again.');
+            console.error('FD Creation Error:', error);
+            console.error('Error Response:', error.response?.data);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to create FD scheme';
+            alert(`Failed to create FD scheme: ${errorMessage}`);
         } finally {
             setLoading(false);
         }

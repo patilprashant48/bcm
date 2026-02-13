@@ -63,8 +63,13 @@ export const capitalAPI = {
         maturityDays: data.tenure_months * 30,
         // Defaults
         interestCalculationDays: 365,
-        interestTransferType: 'MATURITY', // Default for simple FD
-        taxDeductionPercent: 0
+        interestTransferType: ['MAIN'], // Transfer interest to main wallet
+        taxDeductionPercent: 0,
+        // Optional: can add maturityTransferDivision if needed
+        maturityTransferDivision: {
+            mainWallet: 100, // Transfer 100% to main wallet at maturity
+            incomeWallet: 0
+        }
     }),
     createPartnership: (data) => api.post('/business/capital/partnerships', data),
     getMyCapitalTools: () => api.get('/business/capital'),
