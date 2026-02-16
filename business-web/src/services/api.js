@@ -60,16 +60,14 @@ export const capitalAPI = {
         name: data.scheme_name,
         interestPercent: data.interest_rate,
         minAmount: data.fd_amount,
-        maturityDays: data.tenure_months * 30,
-        // Defaults
+        maturityDays: data.tenure_months * 30, // Approx
+        // Defaults for Business User created schemes
         interestCalculationDays: 365,
-        interestTransferType: ['MAIN'], // Transfer interest to main wallet
+        interestTransferType: ['SCHEME'], // Cumulative default
+        transferScheduleDays: data.tenure_months * 30, // No periodic transfer
         taxDeductionPercent: 0,
-        // Optional: can add maturityTransferDivision if needed
-        maturityTransferDivision: {
-            mainWallet: 100, // Transfer 100% to main wallet at maturity
-            incomeWallet: 0
-        }
+        interestDivision: { scheme: 100, mainWallet: 0, incomeWallet: 0 },
+        maturityTransferDivision: { mainWallet: 0, incomeWallet: 100 } // Principal+Interest to Income Wallet
     }),
     createPartnership: (data) => api.post('/business/capital/partnerships', data),
     getMyCapitalTools: () => api.get('/business/capital'),
