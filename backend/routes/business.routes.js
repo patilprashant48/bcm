@@ -19,25 +19,36 @@ router.get('/projects/:id', authenticateToken, isBusinessUser, projectController
 router.put('/projects/:id', authenticateToken, isBusinessUser, projectController.updateProject);
 router.delete('/projects/:id', authenticateToken, isBusinessUser, projectController.deleteProject);
 
+const shareController = require('../controllers/shareController');
+const capitalController = require('../controllers/capitalController');
+
 // Capital tool routes for business users
-router.post('/capital/shares', authenticateToken, isBusinessUser, async (req, res) => {
-    // TODO: Create share offering
-    res.json({ success: true, message: 'Share offering created successfully' });
-});
-
-router.post('/capital/loans', authenticateToken, isBusinessUser, async (req, res) => {
-    // TODO: Create loan offering
-    res.json({ success: true, message: 'Loan offering created successfully' });
-});
-
-router.post('/capital/partnerships', authenticateToken, isBusinessUser, async (req, res) => {
-    // TODO: Create partnership offering
-    res.json({ success: true, message: 'Partnership offering created successfully' });
-});
+router.post('/capital/shares', authenticateToken, isBusinessUser, shareController.createShare);
+router.post('/capital/loans', authenticateToken, isBusinessUser, capitalController.createLoan);
+router.post('/capital/partnerships', authenticateToken, isBusinessUser, capitalController.createPartnership);
 
 router.get('/capital', authenticateToken, isBusinessUser, async (req, res) => {
-    // TODO: Get all capital tools for business
-    res.json({ success: true, capitalTools: [] });
+    // Aggregate result: Shares + Capital Options
+    try {
+        const userId = req.user.id;
+        const models = require('../database/mongodb-schema');
+
+        // Find projects for this user
+        const projects = await models.Project.find({ userId });
+        const projectIds = projects.map(p => p._id);
+
+        const shares = await models.Share.find({ projectId: { $in: projectIds } });
+        const options = await models.CapitalOption.find({ projectId: { $in: projectIds } });
+
+        res.json({
+            success: true,
+            shares,
+            capitalTools: options
+        });
+    } catch (error) {
+        console.error('Get Capital Tools error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch capital tools' });
+    }
 });
 
 // Active plan route for business panel  
