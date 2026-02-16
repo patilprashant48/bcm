@@ -12,5 +12,6 @@ router.get('/portfolio', authenticateToken, isInvestor, investorController.getPo
 router.post('/watchlist/add', authenticateToken, isInvestor, investorController.addToWatchlist);
 router.get('/watchlist', authenticateToken, isInvestor, investorController.getWatchlist);
 router.get('/announcements', authenticateToken, isInvestor, investorController.getAnnouncements);
+router.get('/fds', authenticateToken, isInvestor, require('../controllers/fdsController').getActiveSchemes); // Direct link to FDS controller
 
 module.exports = router;
