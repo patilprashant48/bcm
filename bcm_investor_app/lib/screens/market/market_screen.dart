@@ -61,33 +61,43 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
     try {
       List<dynamic> data = [];
       
+      print('Loading market data for category: $_activeCategory');
+      
       if (_activeCategory == 'FDS') {
+        print('Fetching FD Schemes...');
         data = await _apiService.getFDSchemes();
+        print('FD Schemes loaded: ${data.length}');
       } else if (_activeCategory == 'SHARES') {
+        print('Fetching Shares...');
         data = await _apiService.getShares();
+        print('Shares loaded: ${data.length}');
       } else if (_activeCategory == 'SIP') { 
-        // Showing Capital Options (Partnerships/Loans) as SIP/Investment options for now
+        print('Fetching Capital Options...');
         data = await _apiService.getCapitalOptions();
+        print('Capital Options loaded: ${data.length}');
       } else if (_activeCategory == 'SAVING' || _activeCategory == 'GOLD' || _activeCategory == 'COINS') {
-        // Placeholder for other categories
+        print('Placeholder category: $_activeCategory');
         data = []; 
       } else {
-        // ALL or default - show Projects
+        print('Fetching Projects...');
         data = await _apiService.getProjects();
+        print('Projects loaded: ${data.length}');
       }
 
       setState(() {
         _filteredProjects = data;
         _isLoadingMarket = false;
       });
-
+      
+      print('Market data loaded successfully: ${data.length} items');
+      
       // Only start price sim for Shares/Projects
       if (_activeCategory == 'SHARES' || _activeCategory == 'ALL') {
          _startPriceSimulation();
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoadingMarket = false);
       print('Load market data error: $e');
+      if (mounted) setState(() => _isLoadingMarket = false);
     }
   }
 
@@ -198,7 +208,6 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
   }
 
   Widget _buildCategoryChip(String id, String label) {
-    // ... (Same as before)
     final isSelected = _activeCategory == id;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -210,7 +219,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
         },
         selectedColor: AppTheme.primaryColor.withOpacity(0.2),
         labelStyle: TextStyle(
-          color: isSelected ? AppTheme.primaryColor : Colors.black,
+          color: isSelected ? AppTheme.primaryColor : Colors.white, // Changed from black to white
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),

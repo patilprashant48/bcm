@@ -291,16 +291,27 @@ class ApiService {
 
   // FDS
   Future<List<dynamic>> getFDSchemes() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/investor/fds'),
-      headers: await _getHeaders(),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/investor/fds'),
+        headers: await _getHeaders(),
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['schemes'] ?? [];
-    } else {
-      throw Exception('Failed to get FD schemes');
+      print('FDS Response Status: ${response.statusCode}');
+      print('FDS Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final schemes = data['schemes'] ?? [];
+        print('FDS Schemes Count: ${schemes.length}');
+        return schemes;
+      } else {
+        print('FDS Error: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to get FD schemes: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('FDS Exception: $e');
+      throw Exception('Failed to get FD schemes: $e');
     }
   }
 
