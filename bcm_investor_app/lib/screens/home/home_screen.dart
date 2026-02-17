@@ -10,6 +10,7 @@ import '../wallet/wallet_screen.dart';
 import '../wallet/top_up_screen.dart';
 import '../wallet/withdrawal_screen.dart';
 import '../market/market_screen.dart';
+import '../portfolio/holdings_screen.dart';
 import 'all_projects_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -25,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> _projects = [];
   bool _isLoading = true;
   int _currentAdIndex = 0;
-  String _selectedReportType = 'Today\'s Buy';
+  String _selectedReportType = 'Buy';
   
   // Mock investment amounts per category
   final Map<String, double> _categoryInvestments = {
@@ -208,8 +209,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     
                     const SizedBox(height: 20),
                     
-                    // Today's Report Table
-                    _buildTodaysReportsTable(),
+                    // My Holdings Card
+                    _buildHoldingsCard(),
                     
                     const SizedBox(height: 20),
                     
@@ -429,6 +430,139 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHoldingsCard() {
+    // Mock data for summary - replace with actual data from API
+    final double totalInvestment = 115000;
+    final double totalValue = 123250;
+    final double totalProfit = totalValue - totalInvestment;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HoldingsScreen()),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.greenAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.pie_chart, color: Colors.white, size: 24),
+                        SizedBox(width: 12),
+                        Text(
+                          'My Holdings',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        children: [
+                          Text(
+                            'View Details',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_ios, color: Colors.white, size: 12),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Summary Stats
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildHoldingStat('Investment', totalInvestment),
+                    Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+                    _buildHoldingStat('Value', totalValue),
+                    Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+                    _buildHoldingStat('Profit', totalProfit, isProfit: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHoldingStat(String label, double amount, {bool isProfit = false}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '₹${amount.toStringAsFixed(0)}',
+          style: TextStyle(
+            color: isProfit 
+                ? (amount >= 0 ? Colors.lightGreenAccent : Colors.redAccent)
+                : Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 
@@ -835,7 +969,7 @@ class _HomeScreenState extends State<HomeScreen> {
     List<DataColumn> columns = [];
     List<Map<String, dynamic>> data = [];
     
-    if (_selectedReportType == 'Today\'s Buy') {
+    if (_selectedReportType == 'Buy') {
       columns = const [
         DataColumn(label: Text('Txn ID')),
         DataColumn(label: Text('Stocks')),
@@ -850,7 +984,7 @@ class _HomeScreenState extends State<HomeScreen> {
         {'txnId': '332156', 'stocks': 'REL', 'quantity': 2, 'amount': 2400, 'balance': 100},
         {'txnId': '994411', 'stocks': 'TATA', 'quantity': 15, 'amount': 450, 'balance': 800},
       ];
-    } else if (_selectedReportType == 'Today\'s Selling') {
+    } else if (_selectedReportType == 'Selling') {
       columns = const [
         DataColumn(label: Text('Txn ID')),
         DataColumn(label: Text('Stocks')),
@@ -934,10 +1068,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         isExpanded: true,
                         items: [
-                          'Today\'s Buy',
-                          'Today\'s Selling', 
-                          'Today\'s Top up', 
-                          'Today\'s Withdrawal'
+                          'Buy',
+                          'Selling', 
+                          'Top up', 
+                          'Withdrawal'
                         ].map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
