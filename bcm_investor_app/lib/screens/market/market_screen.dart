@@ -57,17 +57,59 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
   }
 
   Future<void> _loadMarketData() async {
+    setState(() => _isLoadingMarket = true);
     try {
-      final projects = await _apiService.getProjects(); // Fetch all
+      List<dynamic> data = [];
+      
+      if (_activeCategory == 'FDS') {
+        data = await _apiService.getFDSchemes();
+      } else if (_activeCategory == 'SHARES') {
+        data = await _apiService.getShares();
+      } else if (_activeCategory == 'SIP') { 
+        // Showing Capital Options (Partnerships/Loans) as SIP/Investment options for now
+        data = await _apiService.getCapitalOptions();
+      } else if (_activeCategory == 'SAVING' || _activeCategory == 'GOLD' || _activeCategory == 'COINS') {
+        // Placeholder for other categories
+        data = []; 
+      } else {
+        // ALL or default - show Projects
+        data = await _apiService.getProjects();
+      }
+
       setState(() {
-        _allProjects = projects;
-        _applyFilter();
+        _filteredProjects = data;
         _isLoadingMarket = false;
       });
-      _startPriceSimulation();
+
+      // Only start price sim for Shares/Projects
+      if (_activeCategory == 'SHARES' || _activeCategory == 'ALL') {
+         _startPriceSimulation();
+      }
     } catch (e) {
       if (mounted) setState(() => _isLoadingMarket = false);
+      print('Load market data error: $e');
     }
+  }
+
+
+
+  void _startPriceSimulation() {
+    _priceTimer?.cancel();
+    _priceTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!mounted) return;
+      setState(() {
+        final random = Random();
+        for (var item in _filteredProjects) {
+          // Only simulate if it looks like a share/project
+          if (item.containsKey('currentPrice') || item.containsKey('price_per_share')) {
+             double currentPrice = (item['currentPrice'] ?? item['price_per_share'] ?? 100).toDouble();
+             double change = currentPrice * (random.nextDouble() * 0.02 - 0.01);
+             item['currentPrice'] = currentPrice + change; // Update for UI
+             item['day_change_percent'] = (random.nextDouble() * 5 - 2.5);
+          }
+        }
+      });
+    });
   }
 
   Future<void> _loadTransactions() async {
@@ -83,44 +125,11 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
     }
   }
 
-  void _applyFilter() {
-    if (_activeCategory == 'ALL') {
-      _filteredProjects = List.from(_allProjects);
-    } else {
-      _filteredProjects = _allProjects.where((p) {
-        // Assuming category field exists, or matching by name/type
-        // If category field is missing in your mock/backend, we might need loose matching
-        final cat = p['category']?.toString().toUpperCase() ?? 'SHARES';
-        return cat == _activeCategory;
-      }).toList();
-    }
-  }
-
-  void _startPriceSimulation() {
-    // Simulate live price changes every 3 seconds
-    _priceTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (!mounted) return;
-      setState(() {
-        final random = Random();
-        for (var project in _filteredProjects) {
-          // Mock property for live price if not exists
-          double currentPrice = (project['price_per_share'] ?? 100).toDouble();
-          // Fluctuate by -1% to +1%
-          double change = currentPrice * (random.nextDouble() * 0.02 - 0.01);
-          project['current_market_price'] = currentPrice + change;
-          
-          // Also set a 'change_percent' for UI
-          project['day_change_percent'] = (random.nextDouble() * 5 - 2.5); // -2.5% to +2.5%
-        }
-      });
-    });
-  }
-
   void _onCategorySelected(String category) {
     setState(() {
       _activeCategory = category;
-      _applyFilter();
     });
+    _loadMarketData(); // Reload data for new category
   }
 
   @override
@@ -135,7 +144,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
           indicatorColor: AppTheme.primaryColor,
           tabs: const [
             Tab(text: 'Market'),
-            Tab(text: 'Transactions (Self)'),
+            Tab(text: 'Transactions'),
           ],
         ),
       ),
@@ -159,30 +168,28 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              _buildCategoryChip('ALL', 'All'),
+              _buildCategoryChip('ALL', 'Projects'),
               _buildCategoryChip('SHARES', 'Shares'),
               _buildCategoryChip('FDS', 'FDs'),
-              _buildCategoryChip('SIP', 'SIP'),
+              _buildCategoryChip('SIP', 'Partnership'), // Reusing SIP for Partnership/Capital
               _buildCategoryChip('SAVING', 'Saving'),
               _buildCategoryChip('GOLD', 'Gold'),
-              _buildCategoryChip('COINS', 'Coins'),
             ],
           ),
         ),
         
         // List
         Expanded(
-          child: _isLoadingMarket
+           child: _isLoadingMarket
               ? const Center(child: CircularProgressIndicator())
               : _filteredProjects.isEmpty
-                  ? const Center(child: Text('No projects found'))
+                  ? Center(child: Text('No ${_activeCategory.toLowerCase()} available'))
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: _filteredProjects.length,
                       separatorBuilder: (_, __) => const Divider(),
                       itemBuilder: (context, index) {
-                        final item = _filteredProjects[index];
-                        return _buildMarketItem(item);
+                        return _buildMarketItem(_filteredProjects[index]);
                       },
                     ),
         ),
@@ -191,6 +198,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
   }
 
   Widget _buildCategoryChip(String id, String label) {
+    // ... (Same as before)
     final isSelected = _activeCategory == id;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -210,83 +218,129 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
   }
 
   Widget _buildMarketItem(Map<String, dynamic> item) {
-    final price = (item['current_market_price'] ?? item['price_per_share'] ?? 100).toDouble();
-    final change = (item['day_change_percent'] ?? 0.0).toDouble();
-    final isPositive = change >= 0;
+    // Determine Type
+    bool isFDS = item.containsKey('schemeId') || item.containsKey('interestPercent');
+    bool isShare = item.containsKey('shareName'); // Share model has shareName
+    bool isOption = item.containsKey('optionType'); // Capital Option
 
-    return InkWell(
+    if (isFDS) return _buildFDSItem(item);
+    if (isShare) return _buildShareItem(item);
+    if (isOption) return _buildCapitalOptionItem(item);
+
+    // Default: Project
+    return _buildProjectItem(item);
+  }
+
+  Widget _buildFDSItem(Map<String, dynamic> item) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(child: Icon(Icons.savings, color: Colors.orange)),
+        title: Text(item['name'] ?? 'FD Scheme'),
+        subtitle: Text('Interest: ${item['interestPercent']}% | Min: ₹${item['minAmount']}'),
+        trailing: ElevatedButton(
+          child: Text('Invest'),
+          onPressed: () {
+            // Must use _id for backend findById
+            _showInvestDialog('FDS', item['_id'], item['name']);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShareItem(Map<String, dynamic> item) {
+    double price = (item['currentPrice'] ?? item['shareValue'] ?? 0).toDouble();
+    double change = (item['day_change_percent'] ?? 0.0).toDouble();
+    bool isPositive = change >= 0;
+
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(child: Text((item['shareName']??'S')[0])),
+        title: Text(item['shareName'] ?? 'Share'),
+        subtitle: Text('Price: ₹$price'),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text('₹${price.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, color: isPositive ? Colors.green : Colors.red)),
+            Text('${isPositive?'+':''}${change.toStringAsFixed(2)}%', style: TextStyle(fontSize: 10, color: isPositive ? Colors.green : Colors.red)),
+            // Text('Buy', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))
+          ],
+        ),
+        onTap: () => _showInvestDialog('SHARE', item['_id'], item['shareName']),
+      ),
+    );
+  }
+
+  Widget _buildCapitalOptionItem(Map<String, dynamic> item) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(child: Icon(Icons.business, color: Colors.blue)),
+        title: Text('${item['optionType']} Request'),
+        subtitle: Text(item['optionType'] == 'LOAN' 
+            ? 'Loan: ₹${item['loanAmount']} @ ${item['interestRate']}%'
+            : 'Partnership: Min ₹${item['minimumInvestment']}'),
+        trailing: ElevatedButton(
+          child: Text('View'),
+          onPressed: () => _showInvestDialog('CAPITAL', item['_id'], item['optionType']),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProjectItem(Map<String, dynamic> item) {
+    // Previous Project Logic
+    final price = (item['current_market_price'] ?? 100).toDouble();
+    
+    return ListTile(
+      leading: CircleAvatar(child: Text((item['project_name'] ?? 'P')[0])),
+      title: Text(item['project_name'] ?? 'Project'),
+      subtitle: Text(item['category'] ?? 'Project'),
+      trailing: Text('₹${price.toStringAsFixed(0)}'),
       onTap: () {
-        // Go to Project Details / Share Market Screen
-        Navigator.push(
+          Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => ProjectDetailsScreen(project: item)),
         );
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            // Icon/Avatar
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  (item['project_name'] ?? 'S')[0],
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            
-            // Name & Company
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item['project_name'] ?? 'Unknown',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Text(
-                    item['category'] ?? 'Stock',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Graph (Mock)
-            // SizedBox(width: 50, child: Icon(isPositive ? Icons.show_chart : Icons.trending_down, color: isPositive ? Colors.green : Colors.red)),
-            
-            // Price & Change
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '₹${price.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isPositive ? AppTheme.greenAccent : Colors.red,
-                  ),
-                ),
-                Text(
-                  '${isPositive ? '+' : ''}${change.toStringAsFixed(2)}%',
-                  style: TextStyle(
-                    color: isPositive ? AppTheme.greenAccent : Colors.red,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
+    );
+  }
+
+  void _showInvestDialog(String type, String id, String name) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final _amountController = TextEditingController();
+        return AlertDialog(
+          title: Text('Invest in $name'),
+          content: TextField(
+            controller: _amountController,
+            decoration: InputDecoration(labelText: 'Amount / Quantity'),
+            keyboardType: TextInputType.number,
+          ),
+          actions: [
+            TextButton(child: Text('Cancel'), onPressed: () => Navigator.pop(context)),
+            ElevatedButton(
+              child: Text('Confirm'),
+              onPressed: () async {
+                final val = double.tryParse(_amountController.text);
+                if (val != null) {
+                   Navigator.pop(context); // Close dialog first
+                   try {
+                     if (type == 'FDS') await _apiService.investInFD(id, val);
+                     else if (type == 'SHARE') await _apiService.buyCompanyShares(id, val.toInt()); // Quantity
+                     else if (type == 'CAPITAL') await _apiService.investInCapitalOption(id, val);
+                     
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Investment Successful!')));
+                   } catch(e) {
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                   }
+                }
+              },
+            )
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 

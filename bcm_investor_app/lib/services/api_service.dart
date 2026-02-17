@@ -284,4 +284,101 @@ class ApiService {
       throw Exception(error['message'] ?? 'Failed to submit withdrawal request');
     }
   }
+
+  // ==========================================
+  // NEW FEATURES: FDS, SHARES, CAPITAL TOOLS
+  // ==========================================
+
+  // FDS
+  Future<List<dynamic>> getFDSchemes() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/investor/fds'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['schemes'] ?? [];
+    } else {
+      throw Exception('Failed to get FD schemes');
+    }
+  }
+
+  Future<void> investInFD(String schemeId, double amount) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/fds/invest'),
+      headers: await _getHeaders(),
+      body: json.encode({
+        'schemeId': schemeId,
+        'amount': amount,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Failed to invest in FD');
+    }
+  }
+
+  // SHARES (Company Shares)
+  Future<List<dynamic>> getShares() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/investor/shares'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['shares'] ?? [];
+    } else {
+      throw Exception('Failed to get shares');
+    }
+  }
+
+  Future<void> buyCompanyShares(String shareId, int quantity) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/shares/$shareId/buy'),
+      headers: await _getHeaders(),
+      body: json.encode({
+        'shareId': shareId,
+        'quantity': quantity,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Failed to buy shares');
+    }
+  }
+
+  // CAPITAL OPTIONS (Loans, Partnerships)
+  Future<List<dynamic>> getCapitalOptions() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/investor/capital'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['options'] ?? [];
+    } else {
+      throw Exception('Failed to get capital options');
+    }
+  }
+
+  Future<void> investInCapitalOption(String optionId, double amount) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/capital/invest'),
+      headers: await _getHeaders(),
+      body: json.encode({
+        'optionId': optionId,
+        'amount': amount,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Failed to invest in capital option');
+    }
+  }
 }
