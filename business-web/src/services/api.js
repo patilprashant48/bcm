@@ -51,6 +51,7 @@ export const walletAPI = {
     getWallet: () => api.get('/wallet'),
     requestTopUp: (data) => api.post('/wallet/topup-request', data),
     getTransactions: (params) => api.get('/wallet/transactions', { params }),
+    getPaymentDetails: () => api.get('/wallet/payment-details'),
 };
 
 export const capitalAPI = {
@@ -77,6 +78,10 @@ export const planAPI = {
     getPlans: () => api.get('/plans'),
     activatePlan: (planId, data) => api.post(`/plans/${planId}/activate`, data),
     getActivePlan: () => api.get('/business/active-plan'),
+};
+
+export const legalAPI = {
+    getTemplates: () => api.get('/business/documents/templates'),
 };
 
 export default api;

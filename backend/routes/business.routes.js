@@ -39,11 +39,16 @@ router.get('/capital', authenticateToken, isBusinessUser, async (req, res) => {
 
         const shares = await models.Share.find({ projectId: { $in: projectIds } });
         const options = await models.CapitalOption.find({ projectId: { $in: projectIds } });
+        // FDs are linked to business user directly? 
+        // fdsController createScheme uses req.user.id as createdBy.
+        // FDScheme schema has 'createdBy'.
+        const fds = await models.FDScheme.find({ createdBy: userId });
 
         res.json({
             success: true,
             shares,
-            capitalTools: options
+            capitalTools: options,
+            fds
         });
     } catch (error) {
         console.error('Get Capital Tools error:', error);
@@ -51,10 +56,21 @@ router.get('/capital', authenticateToken, isBusinessUser, async (req, res) => {
     }
 });
 
+const planController = require('../controllers/planController');
+
 // Active plan route for business panel  
-router.get('/active-plan', authenticateToken, isBusinessUser, async (req, res) => {
-    // TODO: Get business user's active plan
-    res.json({ success: true, plan: null });
+router.get('/active-plan', authenticateToken, isBusinessUser, planController.getActivePlan);
+
+// Legal Templates for business users
+router.get('/documents/templates', authenticateToken, isBusinessUser, async (req, res) => {
+    try {
+        const models = require('../database/mongodb-schema');
+        const templates = await models.DocumentTemplate.find({ isActive: true }).sort({ updatedAt: -1 });
+        res.json({ success: true, templates });
+    } catch (error) {
+        console.error('Get Legal Templates error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch templates' });
+    }
 });
 
 module.exports = router;

@@ -105,10 +105,17 @@ export const adminAPI = {
     getShares: (params) => api.get('/admin/capital/shares', { params }),
     approveShare: (id) => api.post(`/admin/capital/shares/${id}/approve`),
     rejectShare: (id, data) => api.post(`/admin/capital/shares/${id}/reject`, data),
+    recheckShare: (id, data) => api.post(`/admin/capital/shares/${id}/recheck`, data),
 
-    getLoans: () => api.get('/admin/capital/loans'),
+    getLoans: (params) => api.get('/admin/capital/loans', { params }),
+    approveLoan: (id) => api.post(`/admin/capital/loans/${id}/approve`),
+    rejectLoan: (id, data) => api.post(`/admin/capital/loans/${id}/reject`, data),
+    recheckLoan: (id, data) => api.post(`/admin/capital/loans/${id}/recheck`, data),
     getFDs: () => api.get('/admin/capital/fds'),
-    getPartnerships: () => api.get('/admin/capital/partnerships'),
+    getPartnerships: (params) => api.get('/admin/capital/partnerships', { params }),
+    approvePartnership: (id) => api.post(`/admin/capital/partnerships/${id}/approve`),
+    rejectPartnership: (id, data) => api.post(`/admin/capital/partnerships/${id}/reject`, data),
+    recheckPartnership: (id, data) => api.post(`/admin/capital/partnerships/${id}/recheck`, data),
 
     // Reports
     getTransactionReports: (params) => api.get('/admin/reports/transactions', { params }),
@@ -124,12 +131,19 @@ export const adminAPI = {
 
     // Audit Logs
     getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
+
+    // Legal Templates
+    getLegalTemplates: () => api.get('/admin/documents/templates'),
+    createLegalTemplate: (data) => api.post('/admin/documents/templates', data),
+    updateLegalTemplate: (id, data) => api.put(`/admin/documents/templates/${id}`, data),
+    deleteLegalTemplate: (id) => api.delete(`/admin/documents/templates/${id}`),
 };
 
 export const fdsAPI = {
     getSchemes: () => api.get('/fds/schemes'),
     createScheme: (data) => api.post('/fds/schemes', data),
     updateStatus: (id, data) => api.patch(`/fds/schemes/${id}/status`, data),
+    manageApproval: (id, data) => api.post(`/fds/schemes/${id}/approval`, data),
 };
 
 export default api;

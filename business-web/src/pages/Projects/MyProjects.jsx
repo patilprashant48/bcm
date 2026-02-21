@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { projectAPI } from '../../services/api';
 
+const getStatusColor = (status) => {
+    switch (status) {
+        case 'NEW': return 'bg-blue-100 text-blue-800';
+        case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+        case 'RECHECK': return 'bg-orange-100 text-orange-800';
+        case 'LIVE': return 'bg-green-100 text-green-800';
+        case 'CLOSED': return 'bg-gray-100 text-gray-800';
+        case 'REJECTED': return 'bg-red-100 text-red-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+};
+
 const MyProjects = () => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -27,15 +39,7 @@ const MyProjects = () => {
         return p.status === filter;
     });
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-            case 'LIVE': return 'bg-green-100 text-green-800';
-            case 'CLOSED': return 'bg-gray-100 text-gray-800';
-            case 'REJECTED': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
-    };
+
 
     if (loading) {
         return <div className="flex items-center justify-center h-64"><div className="text-xl">Loading...</div></div>;
@@ -55,7 +59,7 @@ const MyProjects = () => {
 
             {/* Filters */}
             <div className="mb-6 flex gap-2">
-                {['ALL', 'PENDING', 'LIVE', 'CLOSED'].map((status) => (
+                {['ALL', 'NEW', 'RECHECK', 'LIVE', 'CLOSED'].map((status) => (
                     <button
                         key={status}
                         onClick={() => setFilter(status)}
@@ -64,7 +68,7 @@ const MyProjects = () => {
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
                     >
-                        {status}
+                        {status === 'NEW' ? 'PENDING' : status}
                     </button>
                 ))}
             </div>
@@ -129,8 +133,16 @@ const MyProjects = () => {
                                     to={`/projects/${project.id}`}
                                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition text-center font-medium"
                                 >
-                                    View Details
+                                    View
                                 </Link>
+                                {['NEW', 'RECHECK', 'DRAFT', 'REJECTED'].includes(project.status) && (
+                                    <Link
+                                        to={`/projects/edit/${project.id}`}
+                                        className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition text-center font-medium"
+                                    >
+                                        Edit
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -139,5 +151,7 @@ const MyProjects = () => {
         </div>
     );
 };
+
+
 
 export default MyProjects;

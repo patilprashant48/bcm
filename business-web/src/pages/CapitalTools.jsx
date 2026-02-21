@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { capitalAPI } from '../services/api';
 
 const CapitalTools = () => {
@@ -6,6 +6,7 @@ const CapitalTools = () => {
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({});
     const [loading, setLoading] = useState(false);
+    const [myOfferings, setMyOfferings] = useState({ shares: [], loans: [], partnerships: [], fds: [] });
 
     const tools = [
         { id: 'shares', name: 'Shares', icon: '📈', color: 'blue' },
@@ -13,6 +14,26 @@ const CapitalTools = () => {
         { id: 'fds', name: 'Fixed Deposits', icon: '🏦', color: 'purple' },
         { id: 'partnerships', name: 'Partnerships', icon: '🤝', color: 'orange' },
     ];
+
+    useEffect(() => {
+        loadMyOfferings();
+    }, []);
+
+    const loadMyOfferings = async () => {
+        try {
+            const res = await capitalAPI.getMyCapitalTools();
+            if (res.data.success) {
+                setMyOfferings({
+                    shares: res.data.shares || [],
+                    loans: res.data.capitalTools ? res.data.capitalTools.filter(t => t.optionType === 'LOAN') : [],
+                    partnerships: res.data.capitalTools ? res.data.capitalTools.filter(t => t.optionType === 'PARTNERSHIP') : [],
+                    fds: res.data.fds || []
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load offerings', error);
+        }
+    };
 
     const handleCreateShare = async (e) => {
         e.preventDefault();
@@ -27,6 +48,7 @@ const CapitalTools = () => {
             alert('Share offering created successfully!');
             setShowModal(false);
             setFormData({});
+            loadMyOfferings();
         } catch (error) {
             alert('Failed to create share offering. Please try again.');
         } finally {
@@ -48,6 +70,7 @@ const CapitalTools = () => {
             alert('Loan scheme created successfully!');
             setShowModal(false);
             setFormData({});
+            loadMyOfferings();
         } catch (error) {
             alert('Failed to create loan scheme. Please try again.');
         } finally {
@@ -69,9 +92,9 @@ const CapitalTools = () => {
             alert('FD scheme created successfully!');
             setShowModal(false);
             setFormData({});
+            loadMyOfferings();
         } catch (error) {
             console.error('FD Creation Error:', error);
-            console.error('Error Response:', error.response?.data);
             const errorMessage = error.response?.data?.message || error.message || 'Failed to create FD scheme';
             alert(`Failed to create FD scheme: ${errorMessage}`);
         } finally {
@@ -92,6 +115,7 @@ const CapitalTools = () => {
             alert('Partnership offering created successfully!');
             setShowModal(false);
             setFormData({});
+            loadMyOfferings();
         } catch (error) {
             alert('Failed to create partnership. Please try again.');
         } finally {
@@ -343,6 +367,86 @@ const CapitalTools = () => {
         }
     };
 
+    const renderOfferingsList = () => {
+        const getStatusBadge = (status) => {
+            const colors = {
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'APPROVED': 'bg-green-100 text-green-800',
+                'REJECTED': 'bg-red-100 text-red-800',
+                'RECHECK': 'bg-orange-100 text-orange-800',
+                'ACTIVE': 'bg-green-100 text-green-800'
+            };
+            return <span className={`px-2 py-1 rounded text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}>{status}</span>;
+        };
+
+        let list = [];
+        let type = '';
+
+        switch (activeTab) {
+            case 'shares':
+                list = myOfferings.shares;
+                type = 'Shares';
+                break;
+            case 'loans':
+                list = myOfferings.loans;
+                type = 'Loans';
+                break;
+            case 'fds':
+                list = myOfferings.fds;
+                type = 'FD Schemes';
+                break;
+            case 'partnerships':
+                list = myOfferings.partnerships;
+                type = 'Partnerships';
+                break;
+            default: return null;
+        }
+
+        if (list.length === 0) {
+            return (
+                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">No active {type} found. Create one to get started.</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {list.map((item) => (
+                            <tr key={item._id || item.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {item.shareName || item.schemeName || item.name || item.optionType || 'Offering'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {activeTab === 'shares' && `Price: ₹${item.shareValue} | Total: ${item.totalShares}`}
+                                    {activeTab === 'loans' && `Amount: ₹${item.loanAmount} | Rate: ${item.interestRate}%`}
+                                    {activeTab === 'fds' && `Min: ₹${item.minAmount} | Rate: ${item.interestPercent}%`}
+                                    {activeTab === 'partnerships' && `Inv: ₹${item.minimumInvestment} | Share: ${item.profitSharingRatio}%`}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {getStatusBadge(item.approvalStatus || (item.isActive ? 'ACTIVE' : 'PENDING'))}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {new Date(item.createdAt).toLocaleDateString()}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
     return (
         <div>
             <div className="mb-6">
@@ -355,15 +459,30 @@ const CapitalTools = () => {
                 {tools.map((tool) => (
                     <button
                         key={tool.id}
-                        onClick={() => { setActiveTab(tool.id); setShowModal(true); setFormData({}); }}
+                        onClick={() => { setActiveTab(tool.id); }}
                         className={`bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-200 border-2 ${activeTab === tool.id ? `border-${tool.color}-500` : 'border-transparent'
                             }`}
                     >
                         <div className="text-5xl mb-3">{tool.icon}</div>
                         <h3 className="font-bold text-gray-800 text-lg mb-2">{tool.name}</h3>
-                        <p className="text-sm text-gray-600">Create new offering</p>
+                        <p className="text-sm text-gray-600">Manage offerings</p>
                     </button>
                 ))}
+            </div>
+
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">My {tools.find(t => t.id === activeTab)?.name}</h2>
+                <button
+                    onClick={() => { setShowModal(true); setFormData({}); }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition font-medium"
+                >
+                    + Create New
+                </button>
+            </div>
+
+            {/* Offerings List */}
+            <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+                {renderOfferingsList()}
             </div>
 
             {/* Info Section */}

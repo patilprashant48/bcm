@@ -46,9 +46,22 @@ router.put('/settings', authenticateToken, isAdmin, adminController.updateSettin
 router.get('/capital/shares', authenticateToken, isAdmin, adminController.getShares);
 router.post('/capital/shares/:id/approve', authenticateToken, isAdmin, adminController.approveShare);
 router.post('/capital/shares/:id/reject', authenticateToken, isAdmin, adminController.rejectShare);
+router.post('/capital/shares/:id/recheck', authenticateToken, isAdmin, adminController.recheckShare);
 router.get('/capital/loans', authenticateToken, isAdmin, adminController.getLoans);
+router.post('/capital/loans/:id/approve', authenticateToken, isAdmin, adminController.approveLoan);
+router.post('/capital/loans/:id/reject', authenticateToken, isAdmin, adminController.rejectLoan);
+router.post('/capital/loans/:id/recheck', authenticateToken, isAdmin, adminController.recheckLoan);
 router.get('/capital/fds', authenticateToken, isAdmin, adminController.getFDs);
 router.get('/capital/partnerships', authenticateToken, isAdmin, adminController.getPartnerships);
+router.post('/capital/partnerships/:id/approve', authenticateToken, isAdmin, adminController.approvePartnership);
+router.post('/capital/partnerships/:id/reject', authenticateToken, isAdmin, adminController.rejectPartnership);
+router.post('/capital/partnerships/:id/recheck', authenticateToken, isAdmin, adminController.recheckPartnership);
+
+// Legal Templates
+router.get('/documents/templates', authenticateToken, isAdmin, adminController.getLegalTemplates);
+router.post('/documents/templates', authenticateToken, isAdmin, adminController.createLegalTemplate);
+router.put('/documents/templates/:id', authenticateToken, isAdmin, adminController.updateLegalTemplate);
+router.delete('/documents/templates/:id', authenticateToken, isAdmin, adminController.deleteLegalTemplate);
 
 // Admin management
 router.get('/admins', authenticateToken, isAdmin, adminController.getAdmins);

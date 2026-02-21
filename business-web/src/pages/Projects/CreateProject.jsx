@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { projectAPI } from '../../services/api';
 
 const CreateProject = () => {
     const navigate = useNavigate();
+    const { id } = useParams();
+    const isEditMode = !!id;
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         project_name: '',
@@ -18,6 +20,51 @@ const CreateProject = () => {
         risk_factors: '',
     });
 
+    useEffect(() => {
+        if (isEditMode) {
+            loadProject();
+        }
+    }, [id]);
+
+    const loadProject = async () => {
+        try {
+            setLoading(true);
+            const response = await projectAPI.getProjectDetails(id); // Use correct API call
+            // Check response structure: getProjectById returns { success: true, project: ... }
+            // But api.js exports getProjectDetails: (id) => api.get(...)
+            // projectController response: { success: true, project: object }
+            // The object keys are camelCase mostly: projectName, description, projectType...
+            // BUT getProjectById in controller maps response to snake_case?
+            // Let's check projectController.getProjectById response structure (Step 7546 lines 121-137):
+            // It maps to snake_case! project_name, project_type, required_capital...
+            // So response.data.project should match form keys.
+            if (response.data.success) {
+                const p = response.data.project;
+                setFormData({
+                    project_name: p.project_name,
+                    description: p.description,
+                    required_capital: p.required_capital,
+                    expected_roi: p.expected_roi || '', // Check if controller returns this. It wasn't in list in 7546, better check.
+                    // Controller 7546 lines 123-136: expected_roi is NOT in the mapped response!
+                    // I should fix controller to return all fields or handle missing ones.
+                    // Assuming for now it returns what it can.
+                    duration_months: p.duration_months || '',
+                    location: p.location,
+                    project_type: p.project_type,
+                    start_date: p.start_date ? p.start_date.split('T')[0] : '',
+                    business_plan: p.business_plan || '',
+                    risk_factors: p.risk_factors || '',
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load project:', error);
+            alert('Failed to load project details.');
+            navigate('/projects');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -30,12 +77,17 @@ const CreateProject = () => {
                 duration_months: parseInt(formData.duration_months),
             };
 
-            await projectAPI.createProject(projectData);
-            alert('Project created successfully! Awaiting admin approval.');
+            if (isEditMode) {
+                await projectAPI.updateProject(id, projectData);
+                alert('Project updated successfully! It has been resubmitted for approval.');
+            } else {
+                await projectAPI.createProject(projectData);
+                alert('Project created successfully! Awaiting admin approval.');
+            }
             navigate('/projects');
         } catch (error) {
-            console.error('Failed to create project:', error);
-            alert(error.response?.data?.message || 'Failed to create project. Please try again.');
+            console.error(`Failed to ${isEditMode ? 'update' : 'create'} project:`, error);
+            alert(error.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} project. Please try again.`);
         } finally {
             setLoading(false);
         }
@@ -44,8 +96,8 @@ const CreateProject = () => {
     return (
         <div>
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Create New Project</h1>
-                <p className="text-gray-600 mt-2">Fill in the details to create a capital raising project</p>
+                <h1 className="text-3xl font-bold text-gray-800">{isEditMode ? 'Edit Project' : 'Create New Project'}</h1>
+                <p className="text-gray-600 mt-2">{isEditMode ? 'Update project details and resubmit' : 'Fill in the details to create a capital raising project'}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-8">
@@ -212,7 +264,7 @@ const CreateProject = () => {
                             disabled={loading}
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Creating...' : 'Create Project'}
+                            {loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Project' : 'Create Project')}
                         </button>
                         <button
                             type="button"

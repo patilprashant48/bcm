@@ -55,7 +55,9 @@ exports.createLoan = async (req, res) => {
             interestRate: parseFloat(interest_rate),
             tenureMonths: parseInt(tenure_months),
             emiAmount: emi || 0,
-            isActive: true
+            emiAmount: emi || 0,
+            isActive: true,
+            approvalStatus: 'PENDING'
         });
 
         res.json({
@@ -94,7 +96,9 @@ exports.createPartnership = async (req, res) => {
             minimumInvestment: parseFloat(investment_amount),
             profitSharingRatio: parseFloat(profit_share_percentage),
             payoutFrequency: 'YEARLY', // Default
-            isActive: true
+            payoutFrequency: 'YEARLY', // Default
+            isActive: true, // Visible to user immediately? Or wait for approval.
+            approvalStatus: 'PENDING'
         });
 
         res.json({
@@ -122,8 +126,8 @@ exports.getCapitalOptions = async (req, res) => {
             const projectIds = projects.map(p => p._id);
             query = { projectId: { $in: projectIds } };
         } else {
-            // Investor: Show Active
-            query = { isActive: true };
+            // Investor: Show Active AND Approved
+            query = { isActive: true, approvalStatus: 'APPROVED' };
         }
 
         const options = await models.CapitalOption.find(query).populate('projectId');
@@ -151,8 +155,8 @@ exports.investInCapitalOption = async (req, res) => {
             populate: { path: 'userId' }
         });
 
-        if (!option || !option.isActive) {
-            return res.status(404).json({ success: false, message: 'Capital option not found or inactive' });
+        if (!option || !option.isActive || option.approvalStatus !== 'APPROVED') {
+            return res.status(404).json({ success: false, message: 'Capital option not found, inactive, or not approved' });
         }
 
         // Validate Amount

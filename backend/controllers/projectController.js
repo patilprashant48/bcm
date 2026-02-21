@@ -130,6 +130,10 @@ exports.getProjectById = async (req, res) => {
                 project_cost: project.projectCost,
                 location: project.location,
                 start_date: project.startDate,
+                expected_roi: project.expectedRoi,
+                duration_months: project.durationMonths,
+                business_plan: project.businessPlan,
+                risk_factors: project.riskFactors,
                 status: project.status,
                 created_at: project.createdAt,
                 updated_at: project.updatedAt
@@ -162,42 +166,50 @@ exports.updateProject = async (req, res) => {
             });
         }
 
-        // Only allow updates if project is in DRAFT or REJECTED status
-        if (project.status !== 'DRAFT' && project.status !== 'REJECTED') {
+        // Only allow updates if project is in DRAFT, RECHECK, or NEW (before approval)
+        const allowedStatuses = ['DRAFT', 'REJECTED', 'RECHECK', 'NEW'];
+        if (!allowedStatuses.includes(project.status)) {
             return res.status(403).json({
                 success: false,
                 message: 'Cannot update project in current status'
             });
         }
 
-        // Update allowed fields
-        const allowedFields = [
-            'project_name', 'description', 'project_type', 'required_capital',
-            'expected_roi', 'duration_months', 'location', 'start_date',
-            'business_plan', 'risk_factors'
-        ];
+        const {
+            project_name, description, project_type, required_capital,
+            expected_roi, duration_months, location, start_date,
+            business_plan, risk_factors
+        } = req.body;
 
-        allowedFields.forEach(field => {
-            if (req.body[field] !== undefined) {
-                project[field] = req.body[field];
-            }
-        });
-
-        // Reset to pending approval if was rejected
-        if (project.status === 'REJECTED') {
-            project.status = 'PENDING_APPROVAL';
+        // Map fields
+        if (project_name) project.projectName = project_name;
+        if (description) project.description = description;
+        if (project_type) project.projectType = project_type;
+        if (required_capital) {
+            project.requiredCapital = parseFloat(required_capital);
+            project.projectCost = parseFloat(required_capital); // Sync cost
         }
+        if (expected_roi) project.expectedRoi = parseFloat(expected_roi); // Check if schema has expectedRoi?
+        if (duration_months) project.durationMonths = parseInt(duration_months); // Check schema
+        if (location) project.location = location;
+        if (start_date) project.startDate = new Date(start_date);
+        if (business_plan) project.businessPlan = business_plan; // Check schema
+        if (risk_factors) project.riskFactors = risk_factors; // Check schema
+
+        // Reset to NEW for admin re-evaluation
+        project.status = 'NEW';
+        project.updatedAt = new Date();
 
         await project.save();
 
         res.json({
             success: true,
-            message: 'Project updated successfully',
+            message: 'Project updated successfully and resubmitted',
             project: {
                 id: project._id,
-                project_name: project.project_name,
+                project_name: project.projectName,
                 status: project.status,
-                updated_at: project.updated_at
+                updated_at: project.updatedAt
             }
         });
     } catch (error) {

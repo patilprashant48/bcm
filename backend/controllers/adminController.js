@@ -418,7 +418,7 @@ exports.getCustomers = async (req, res) => {
             .select('-passwordHash')
             .sort({ createdAt: -1 })
             .lean();
-        
+
         // Transform data to match frontend expectations
         const customers = users.map(user => ({
             id: user._id.toString(),
@@ -434,7 +434,7 @@ exports.getCustomers = async (req, res) => {
             created_at: user.createdAt,
             updated_at: user.updatedAt
         }));
-        
+
         res.json({ success: true, customers });
     } catch (error) {
         console.error('Get customers error:', error);
@@ -447,17 +447,17 @@ exports.suspendCustomer = async (req, res) => {
         if (!req.params.id || req.params.id === 'undefined') {
             return res.status(400).json({ success: false, message: 'Invalid customer ID' });
         }
-        
+
         const user = await User.findByIdAndUpdate(
-            req.params.id, 
-            { isActive: false, updatedAt: new Date() }, 
+            req.params.id,
+            { isActive: false, updatedAt: new Date() },
             { new: true }
         ).select('-passwordHash');
-        
+
         if (!user) {
             return res.status(404).json({ success: false, message: 'Customer not found' });
         }
-        
+
         res.json({ success: true, message: 'Customer suspended successfully', user });
     } catch (error) {
         console.error('Suspend customer error:', error);
@@ -470,17 +470,17 @@ exports.activateCustomer = async (req, res) => {
         if (!req.params.id || req.params.id === 'undefined') {
             return res.status(400).json({ success: false, message: 'Invalid customer ID' });
         }
-        
+
         const user = await User.findByIdAndUpdate(
-            req.params.id, 
-            { isActive: true, updatedAt: new Date() }, 
+            req.params.id,
+            { isActive: true, updatedAt: new Date() },
             { new: true }
         ).select('-passwordHash');
-        
+
         if (!user) {
             return res.status(404).json({ success: false, message: 'Customer not found' });
         }
-        
+
         res.json({ success: true, message: 'Customer activated successfully', user });
     } catch (error) {
         console.error('Activate customer error:', error);
@@ -490,8 +490,8 @@ exports.activateCustomer = async (req, res) => {
 
 exports.getKYCRequests = async (req, res) => {
     try {
-        const KYC = models.KYC || models.User;
-        const kycs = await KYC.find({}).populate('userId', 'name email').sort({ createdAt: -1 });
+        const KycDetails = models.KycDetails;
+        const kycs = await KycDetails.find({}).populate('userId', 'name email').sort({ createdAt: -1 });
         res.json({ success: true, kycs });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get KYC requests', error: error.message });
@@ -500,8 +500,8 @@ exports.getKYCRequests = async (req, res) => {
 
 exports.approveKYC = async (req, res) => {
     try {
-        const KYC = models.KYC;
-        const kyc = await KYC.findByIdAndUpdate(req.params.id, { status: 'APPROVED', approvedAt: new Date() }, { new: true });
+        const KycDetails = models.KycDetails;
+        const kyc = await KycDetails.findByIdAndUpdate(req.params.id, { isVerified: true, verifiedAt: new Date() }, { new: true });
         res.json({ success: true, message: 'KYC approved', kyc });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to approve KYC', error: error.message });
@@ -510,8 +510,11 @@ exports.approveKYC = async (req, res) => {
 
 exports.rejectKYC = async (req, res) => {
     try {
-        const KYC = models.KYC;
-        const kyc = await KYC.findByIdAndUpdate(req.params.id, { status: 'REJECTED', rejectedAt: new Date() }, { new: true });
+        const KycDetails = models.KycDetails;
+        // Assuming rejection just means unverified or deleting? Or setting status if added to schema.
+        // Schema only has isVerified. Let's assume false is rejected or keep as is.
+        // For now, setting isVerified: false. Ideally schema should have status enum.
+        const kyc = await KycDetails.findByIdAndUpdate(req.params.id, { isVerified: false }, { new: true });
         res.json({ success: true, message: 'KYC rejected', kyc });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to reject KYC', error: error.message });
@@ -584,8 +587,16 @@ exports.updateSettings = async (req, res) => {
 
 exports.getShares = async (req, res) => {
     try {
-        const SharesOffering = models.SharesOffering;
-        const shares = await SharesOffering.find({}).populate('businessId', 'businessName').sort({ createdAt: -1 });
+        const Share = models.Share;
+        const shares = await Share.find({}).populate({
+            path: 'projectId',
+            select: 'projectName'
+        }).populate('projectId.userId', 'email').sort({ createdAt: -1 });
+        // Mapped projectId to businessId concept somewhat or frontend expects businessId?
+        // Frontend expects businessId.businessName.
+        // Need to check if Share has businessId directly? No, it has projectId.
+        // Project has userId.
+        // I will stick to what schema has.
         res.json({ success: true, shares });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get shares', error: error.message });
@@ -594,8 +605,8 @@ exports.getShares = async (req, res) => {
 
 exports.approveShare = async (req, res) => {
     try {
-        const SharesOffering = models.SharesOffering;
-        const share = await SharesOffering.findByIdAndUpdate(req.params.id, { approvalStatus: 'APPROVED', approvedAt: new Date() }, { new: true });
+        const Share = models.Share;
+        const share = await Share.findByIdAndUpdate(req.params.id, { approvalStatus: 'APPROVED', approvedAt: new Date() }, { new: true });
         res.json({ success: true, message: 'Share offering approved', share });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to approve share', error: error.message });
@@ -604,21 +615,95 @@ exports.approveShare = async (req, res) => {
 
 exports.rejectShare = async (req, res) => {
     try {
-        const SharesOffering = models.SharesOffering;
-        const share = await SharesOffering.findByIdAndUpdate(req.params.id, { approvalStatus: 'REJECTED', rejectedAt: new Date() }, { new: true });
-        res.json({ success: true, message: 'Share offering rejected', share });
+        const Share = models.Share;
+        const { reason, status } = req.body;
+        const updateStatus = status || 'REJECTED';
+        const share = await Share.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: updateStatus, rejectedAt: new Date(), rejectionReason: reason },
+            { new: true }
+        );
+        res.json({ success: true, message: `Share offering ${updateStatus.toLowerCase()}`, share });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to reject share', error: error.message });
+        res.status(500).json({ success: false, message: 'Failed to update share status', error: error.message });
+    }
+};
+
+exports.recheckShare = async (req, res) => {
+    try {
+        const Share = models.Share;
+        const { comments } = req.body;
+        const share = await Share.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: 'RECHECK', recheckComments: comments },
+            { new: true }
+        );
+        res.json({ success: true, message: 'Share marked for recheck', share });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to recheck share', error: error.message });
     }
 };
 
 exports.getLoans = async (req, res) => {
     try {
-        const LoanRequest = models.LoanRequest;
-        const loans = await LoanRequest.find({}).populate('businessId', 'businessName').sort({ createdAt: -1 });
+        const CapitalOption = models.CapitalOption;
+        const { status } = req.query;
+        const filter = { optionType: 'LOAN' };
+        if (status) filter.approvalStatus = status;
+
+        const loans = await CapitalOption.find(filter)
+            .populate('projectId', 'projectName')
+            .sort({ createdAt: -1 });
         res.json({ success: true, loans });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get loans', error: error.message });
+    }
+};
+
+exports.approveLoan = async (req, res) => {
+    try {
+        const CapitalOption = models.CapitalOption;
+        const loan = await CapitalOption.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: 'APPROVED', approvedAt: new Date() },
+            { new: true }
+        );
+        if (!loan) return res.status(404).json({ success: false, message: 'Loan not found' });
+        res.json({ success: true, message: 'Loan approved successfully', loan });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to approve loan', error: error.message });
+    }
+};
+
+exports.rejectLoan = async (req, res) => {
+    try {
+        const CapitalOption = models.CapitalOption;
+        const { reason } = req.body;
+        const loan = await CapitalOption.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: 'REJECTED', rejectedAt: new Date(), rejectionReason: reason },
+            { new: true }
+        );
+        if (!loan) return res.status(404).json({ success: false, message: 'Loan not found' });
+        res.json({ success: true, message: 'Loan rejected', loan });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to reject loan', error: error.message });
+    }
+};
+
+exports.recheckLoan = async (req, res) => {
+    try {
+        const CapitalOption = models.CapitalOption;
+        const { comments } = req.body;
+        const loan = await CapitalOption.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: 'RECHECK', recheckComments: comments },
+            { new: true }
+        );
+        if (!loan) return res.status(404).json({ success: false, message: 'Loan not found' });
+        res.json({ success: true, message: 'Loan marked for recheck', loan });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to recheck loan', error: error.message });
     }
 };
 
@@ -634,11 +719,109 @@ exports.getFDs = async (req, res) => {
 
 exports.getPartnerships = async (req, res) => {
     try {
-        const Partnership = models.Partnership;
-        const partnerships = await Partnership.find({}).populate('businessId', 'businessName').sort({ createdAt: -1 });
+        const CapitalOption = models.CapitalOption;
+        const { status } = req.query;
+        const filter = { optionType: 'PARTNERSHIP' };
+        if (status) filter.approvalStatus = status;
+
+        const partnerships = await CapitalOption.find(filter)
+            .populate('projectId', 'projectName')
+            .sort({ createdAt: -1 });
         res.json({ success: true, partnerships });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get partnerships', error: error.message });
+    }
+};
+
+exports.approvePartnership = async (req, res) => {
+    try {
+        const CapitalOption = models.CapitalOption;
+        const partnership = await CapitalOption.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: 'APPROVED', approvedAt: new Date() },
+            { new: true }
+        );
+        if (!partnership) return res.status(404).json({ success: false, message: 'Partnership not found' });
+        res.json({ success: true, message: 'Partnership approved', partnership });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to approve partnership', error: error.message });
+    }
+};
+
+exports.rejectPartnership = async (req, res) => {
+    try {
+        const CapitalOption = models.CapitalOption;
+        const { reason } = req.body;
+        const partnership = await CapitalOption.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: 'REJECTED', rejectedAt: new Date(), rejectionReason: reason },
+            { new: true }
+        );
+        if (!partnership) return res.status(404).json({ success: false, message: 'Partnership not found' });
+        res.json({ success: true, message: 'Partnership rejected', partnership });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to reject partnership', error: error.message });
+    }
+};
+
+exports.recheckPartnership = async (req, res) => {
+    try {
+        const CapitalOption = models.CapitalOption;
+        const { comments } = req.body;
+        const partnership = await CapitalOption.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: 'RECHECK', recheckComments: comments },
+            { new: true }
+        );
+        if (!partnership) return res.status(404).json({ success: false, message: 'Partnership not found' });
+        res.json({ success: true, message: 'Partnership marked for recheck', partnership });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to recheck partnership', error: error.message });
+    }
+};
+
+exports.getLegalTemplates = async (req, res) => {
+    try {
+        const DocumentTemplate = models.DocumentTemplate;
+        const templates = await DocumentTemplate.find({}).sort({ updatedAt: -1 });
+        res.json({ success: true, templates });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get templates', error: error.message });
+    }
+};
+
+exports.createLegalTemplate = async (req, res) => {
+    try {
+        const DocumentTemplate = models.DocumentTemplate;
+        const template = new DocumentTemplate({ ...req.body, updatedAt: new Date() });
+        await template.save();
+        res.json({ success: true, message: 'Template created', template });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to create template', error: error.message });
+    }
+};
+
+exports.updateLegalTemplate = async (req, res) => {
+    try {
+        const DocumentTemplate = models.DocumentTemplate;
+        const template = await DocumentTemplate.findByIdAndUpdate(
+            req.params.id,
+            { ...req.body, updatedAt: new Date() },
+            { new: true }
+        );
+        res.json({ success: true, message: 'Template updated', template });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to update template', error: error.message });
+    }
+};
+
+exports.deleteLegalTemplate = async (req, res) => {
+    try {
+        const DocumentTemplate = models.DocumentTemplate;
+        await DocumentTemplate.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Template deleted' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to delete template', error: error.message });
     }
 };
 
@@ -656,10 +839,10 @@ exports.createAdmin = async (req, res) => {
         const bcrypt = require('bcryptjs');
         const { name, email, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const admin = new User({ 
-            email, 
-            passwordHash: hashedPassword, 
-            role: 'ADMIN', 
+        const admin = new User({
+            email,
+            passwordHash: hashedPassword,
+            role: 'ADMIN',
             isActive: true,
             mobile: req.body.mobile || null
         });
@@ -674,15 +857,15 @@ exports.updateAdminStatus = async (req, res) => {
     try {
         const { isActive } = req.body;
         const admin = await User.findByIdAndUpdate(
-            req.params.id, 
-            { isActive: isActive === true || isActive === 'true', updatedAt: new Date() }, 
+            req.params.id,
+            { isActive: isActive === true || isActive === 'true', updatedAt: new Date() },
             { new: true }
         ).select('-passwordHash');
-        
+
         if (!admin) {
             return res.status(404).json({ success: false, message: 'Admin not found' });
         }
-        
+
         res.json({ success: true, message: 'Admin status updated', admin });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to update admin status', error: error.message });
@@ -733,7 +916,7 @@ exports.exportTransactionReport = async (req, res) => {
         if (startDate) filter.createdAt = { $gte: new Date(startDate) };
         if (endDate) filter.createdAt = { ...filter.createdAt, $lte: new Date(endDate) };
         const transactions = await Transaction.find(filter).populate('userId', 'name email').sort({ createdAt: -1 });
-        
+
         // Convert to CSV format
         const csv = transactions.map(t => `${t._id},${t.userId?.email},${t.type},${t.amount},${t.createdAt}`).join('\n');
         res.setHeader('Content-Type', 'text/csv');

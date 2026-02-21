@@ -9,7 +9,8 @@ require('dotenv').config();
 class EmailService {
     constructor() {
         // Initialize SMTP transporter if configured
-        if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        // SMTP Disabled by user request
+        if (false && process.env.SMTP_USER && process.env.SMTP_PASS) {
             this.transporter = nodemailer.createTransporter({
                 host: process.env.SMTP_HOST || 'smtp.gmail.com',
                 port: parseInt(process.env.SMTP_PORT) || 587,

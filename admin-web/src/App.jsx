@@ -141,8 +141,9 @@ const AppRoutes = () => {
                 <Route path="capital/shares" element={<ShareManagement />} />
                 <Route path="capital/loans" element={<LoanManagement />} />
                 <Route path="capital/partnerships" element={<Partnerships />} />
+                <Route path="capital/fds" element={<FixedDeposits />} />
 
-                {/* FDS (Accessed via Capital Tools -> Fixed Deposits) */}
+                {/* FDS (accessed via side menu?) */}
                 <Route path="fds/schemes" element={<SchemeMaster />} />
 
                 {/* Reports */}

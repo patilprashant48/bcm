@@ -53,16 +53,23 @@ exports.createShare = async (req, res) => {
             }
         }
 
+        const total = parseInt(total_shares);
+        // 50% Owner Reserved, 50% Market
+        const reserved = Math.floor(total / 2);
+        const market = total - reserved;
+
         const share = await models.Share.create({
             projectId,
             shareName: share_name,
-            totalShares: parseInt(total_shares),
+            totalShares: total,
             shareValue: parseFloat(price_per_share), // Initial Face Value
             currentPrice: parseFloat(price_per_share),
-            marketShares: parseInt(total_shares), // All available initially? Or pending allotment?
-            ownerShares: 0, // Shares held by owner?
-            isApproved: false, // Needs Admin Approval
-            description // Schema update might be needed if description isn't there. Schema check later.
+            marketShares: market, // 50% Open for sale
+            ownerShares: reserved, // 50% Reserved for Owner
+            approvalStatus: 'PENDING', // Needs Admin Approval
+            isApproved: false, // Deprecated but might be needed for old code compatibility? keeping both for safety or just relying on status.
+            // Schema has default 'PENDING' for status.
+            description
         });
 
         res.json({
@@ -92,14 +99,12 @@ exports.getShares = async (req, res) => {
         let query = {};
         if (role === ROLES.BUSINESS_USER) {
             // Find projects by this user first?
-            // Or aggregate.
-            // Simplified: Find projects by user, then shares by projects.
             const projects = await models.Project.find({ userId });
             const projectIds = projects.map(p => p._id);
             query = { projectId: { $in: projectIds } };
         } else {
             // Investor: Show Active/Approved only
-            query = { isApproved: true };
+            query = { approvalStatus: 'APPROVED' };
         }
 
         const shares = await models.Share.find(query).populate('projectId');
@@ -131,7 +136,7 @@ exports.buyShares = async (req, res) => {
             populate: { path: 'userId' } // Business User
         });
 
-        if (!share || !share.isApproved) {
+        if (!share || share.approvalStatus !== 'APPROVED') {
             return res.status(404).json({ success: false, message: 'Share not found or not available' });
         }
 

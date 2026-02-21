@@ -214,7 +214,11 @@ const shareSchema = new mongoose.Schema({
     currentPrice: { type: Number, required: true },
     marketShares: { type: Number, required: true },
     ownerShares: { type: Number, required: true },
-    isApproved: { type: Boolean, default: false },
+    approvalStatus: {
+        type: String,
+        enum: ['PENDING', 'APPROVED', 'REJECTED', 'RECHECK'],
+        default: 'PENDING'
+    },
     approvedAt: { type: Date },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
@@ -277,6 +281,16 @@ const capitalOptionSchema = new mongoose.Schema({
     couponRate: { type: Number },
     maturityYears: { type: Number },
     isTradable: { type: Boolean, default: false },
+
+    approvalStatus: {
+        type: String,
+        enum: ['PENDING', 'APPROVED', 'REJECTED', 'RECHECK'],
+        default: 'PENDING'
+    },
+    rejectionReason: { type: String },
+    recheckComments: { type: String },
+    approvedAt: { type: Date },
+    rejectedAt: { type: Date },
 
     isActive: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now },

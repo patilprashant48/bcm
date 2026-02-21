@@ -58,7 +58,7 @@ const Layout = () => {
             items: [
                 { name: 'Shares', path: '/capital/shares', icon: '📈' },
                 { name: 'Loans', path: '/capital/loans', icon: '💵' },
-                { name: 'Fixed Deposits', path: '/fds/schemes', icon: '🏦' }, // Changed path and name
+                { name: 'Fixed Deposits', path: '/capital/fds', icon: '🏦' },
                 { name: 'Partnerships', path: '/capital/partnerships', icon: '🤝' },
             ]
         },

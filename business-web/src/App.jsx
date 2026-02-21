@@ -10,6 +10,7 @@ import CreateProject from './pages/Projects/CreateProject';
 import CapitalTools from './pages/CapitalTools';
 import Plans from './pages/Plans';
 import Profile from './pages/Profile';
+import LegalDocs from './pages/LegalDocs';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -60,9 +61,11 @@ const AppRoutes = () => {
                 <Route path="wallet" element={<Wallet />} />
                 <Route path="projects" element={<MyProjects />} />
                 <Route path="projects/create" element={<CreateProject />} />
+                <Route path="projects/edit/:id" element={<CreateProject />} />
                 <Route path="capital" element={<CapitalTools />} />
                 <Route path="plans" element={<Plans />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="legal" element={<LegalDocs />} />
             </Route>
         </Routes>
     );
