@@ -257,6 +257,8 @@ shareTransactionSchema.index({ userId: 1, createdAt: -1 });
 const capitalOptionSchema = new mongoose.Schema({
     projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
     optionType: { type: String, enum: ['PARTNERSHIP', 'LOAN', 'FD', 'BOND'], required: true },
+    title: { type: String },
+    description: { type: String },
 
     // Partnership fields
     ownershipPercentage: { type: Number },

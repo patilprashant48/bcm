@@ -805,10 +805,26 @@ exports.getPartnerships = async (req, res) => {
         const { status } = req.query;
         const filter = { optionType: 'PARTNERSHIP' };
         if (status) filter.approvalStatus = status;
-
-        const partnerships = await CapitalOption.find(filter)
-            .populate('projectId', 'projectName')
+        const rawPartnerships = await CapitalOption.find(filter)
+            .populate({
+                path: 'projectId',
+                populate: { path: 'userId', select: 'name email' }
+            })
             .sort({ createdAt: -1 });
+
+        const partnerships = rawPartnerships.map(p => ({
+            id: p._id,
+            title: p.title || p.projectId?.projectName || 'Partnership Offer',
+            description: p.description || 'No description provided.',
+            investment_amount: p.minimumInvestment,
+            equity_offered: p.profitSharingRatio || p.ownershipPercentage,
+            status: p.approvalStatus,
+            created_at: p.createdAt,
+            businessId: {
+                businessName: p.projectId?.userId?.name || 'Unknown User'
+            }
+        }));
+
         res.json({ success: true, partnerships });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get partnerships', error: error.message });

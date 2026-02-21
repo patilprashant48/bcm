@@ -80,6 +80,7 @@ exports.createPartnership = async (req, res) => {
             partnership_name,
             investment_amount,
             profit_share_percentage,
+            terms,
             project_id
         } = req.body;
 
@@ -93,9 +94,11 @@ exports.createPartnership = async (req, res) => {
         const capitalOption = await models.CapitalOption.create({
             projectId: project._id,
             optionType: 'PARTNERSHIP',
+            title: partnership_name,
+            description: terms,
             minimumInvestment: parseFloat(investment_amount),
             profitSharingRatio: parseFloat(profit_share_percentage),
-            payoutFrequency: 'YEARLY', // Default
+            ownershipPercentage: parseFloat(profit_share_percentage),
             payoutFrequency: 'YEARLY', // Default
             isActive: true, // Visible to user immediately? Or wait for approval.
             approvalStatus: 'PENDING'

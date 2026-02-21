@@ -425,7 +425,7 @@ const CapitalTools = () => {
                         {list.map((item) => (
                             <tr key={item._id || item.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {item.shareName || item.schemeName || item.name || item.optionType || 'Offering'}
+                                    {item.title || item.shareName || item.schemeName || item.name || item.optionType || 'Offering'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {activeTab === 'shares' && `Price: ₹${item.shareValue} | Total: ${item.totalShares}`}
