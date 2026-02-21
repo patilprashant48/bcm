@@ -404,7 +404,7 @@ exports.approvePayment = async (req, res) => {
         if (!paymentRequest.userId) {
             return res.status(404).json({
                 success: false,
-                message: 'User associated with this request not found (may be deleted)'
+                message: 'User associated with this request not found (may be deleted). Please REJECT this request.'
             });
         }
 
@@ -558,13 +558,15 @@ exports.rejectPayment = async (req, res) => {
         paymentRequest.processedAt = new Date();
         await paymentRequest.save();
 
-        // Send email notification
-        await emailService.sendPaymentStatusEmail(
-            paymentRequest.userId.email,
-            paymentRequest.amount,
-            PAYMENT_STATUS.REJECTED,
-            comment
-        );
+        // Send email notification only if user exists
+        if (paymentRequest.userId && paymentRequest.userId.email) {
+            await emailService.sendPaymentStatusEmail(
+                paymentRequest.userId.email,
+                paymentRequest.amount,
+                PAYMENT_STATUS.REJECTED,
+                comment
+            );
+        }
 
         res.json({
             success: true,
