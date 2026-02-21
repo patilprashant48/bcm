@@ -77,6 +77,21 @@ router.post('/notifications/send', authenticateToken, isAdmin, adminController.s
 // Reports
 router.get('/reports/transactions', authenticateToken, isAdmin, adminController.getTransactionReports);
 router.get('/reports/transactions/export', authenticateToken, isAdmin, adminController.exportTransactionReport);
+router.get('/reports/activity', authenticateToken, isAdmin, adminController.getUserActivity);
+router.get('/reports/revenue', authenticateToken, isAdmin, adminController.getRevenueReports);
+
+// Banners
+router.get('/banners', authenticateToken, isAdmin, adminController.getBanners);
+router.post('/banners', authenticateToken, isAdmin, adminController.createBanner);
+router.delete('/banners/:id', authenticateToken, isAdmin, adminController.deleteBanner);
+
+// Announcements
+router.get('/announcements', authenticateToken, isAdmin, adminController.getAnnouncements);
+router.post('/announcements', authenticateToken, isAdmin, adminController.createAnnouncement);
+router.delete('/announcements/:id', authenticateToken, isAdmin, adminController.deleteAnnouncement);
+
+// Generated Docs
+router.get('/documents/generated', authenticateToken, isAdmin, adminController.getGeneratedDocs);
 
 // Dashboard stats
 router.get('/dashboard/stats', authenticateToken, isAdmin, adminController.getDashboardStats);

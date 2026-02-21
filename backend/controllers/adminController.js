@@ -1024,3 +1024,109 @@ exports.exportTransactionReport = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to export transaction report', error: error.message });
     }
 };
+
+// Activity Analytics
+exports.getUserActivity = async (req, res) => {
+    try {
+        const recentLogins = await User.find({}).sort({ updatedAt: -1 }).limit(50).select('name email role updatedAt');
+        const newSignups = await User.find({}).sort({ createdAt: -1 }).limit(50).select('name email role createdAt');
+        res.json({ success: true, recentLogins, newSignups });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get user activity', error: error.message });
+    }
+};
+
+// Revenue Reports
+exports.getRevenueReports = async (req, res) => {
+    try {
+        const LedgerEntry = models.LedgerEntry;
+        const revenueTransactions = await LedgerEntry.find({ referenceType: { $in: ['FEE', 'SUBSCRIPTION', 'COMMISSION'] } })
+            .populate('userId', 'name email')
+            .sort({ createdAt: -1 }).limit(100);
+
+        let totalRevenue = 0;
+        revenueTransactions.forEach(t => totalRevenue += parseFloat(t.amount.toString()));
+
+        res.json({ success: true, revenueTransactions, totalRevenue });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get revenue reports', error: error.message });
+    }
+};
+
+// Banners
+exports.getBanners = async (req, res) => {
+    try {
+        const Banner = models.Banner;
+        const banners = await Banner.find({}).sort({ createdAt: -1 });
+        res.json({ success: true, banners });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get banners', error: error.message });
+    }
+};
+
+exports.createBanner = async (req, res) => {
+    try {
+        const Banner = models.Banner;
+        const banner = new Banner(req.body);
+        await banner.save();
+        res.json({ success: true, message: 'Banner created', banner });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to create banner', error: error.message });
+    }
+};
+
+exports.deleteBanner = async (req, res) => {
+    try {
+        const Banner = models.Banner;
+        await Banner.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Banner deleted' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to delete banner', error: error.message });
+    }
+};
+
+// Announcements
+exports.getAnnouncements = async (req, res) => {
+    try {
+        const Announcement = models.Announcement;
+        const announcements = await Announcement.find({}).sort({ createdAt: -1 });
+        res.json({ success: true, announcements });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get announcements', error: error.message });
+    }
+};
+
+exports.createAnnouncement = async (req, res) => {
+    try {
+        const Announcement = models.Announcement;
+        const announcement = new Announcement(req.body);
+        await announcement.save();
+        res.json({ success: true, message: 'Announcement created', announcement });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to create announcement', error: error.message });
+    }
+};
+
+exports.deleteAnnouncement = async (req, res) => {
+    try {
+        const Announcement = models.Announcement;
+        await Announcement.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Announcement deleted' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to delete announcement', error: error.message });
+    }
+};
+
+// Generated Docs
+exports.getGeneratedDocs = async (req, res) => {
+    try {
+        const GeneratedDocument = models.GeneratedDocument;
+        const docs = await GeneratedDocument.find({})
+            .populate('userId', 'name email')
+            .populate('templateId', 'templateName type')
+            .sort({ generatedAt: -1 }).limit(100);
+        res.json({ success: true, docs });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get generated documents', error: error.message });
+    }
+};

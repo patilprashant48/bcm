@@ -120,6 +120,17 @@ export const adminAPI = {
     // Reports
     getTransactionReports: (params) => api.get('/admin/reports/transactions', { params }),
     exportTransactionReport: (params) => api.get('/admin/reports/transactions/export', { params, responseType: 'blob' }),
+    getUserActivity: () => api.get('/admin/reports/activity'),
+    getRevenueReports: () => api.get('/admin/reports/revenue'),
+
+    // Banners & Announcements
+    getBanners: () => api.get('/admin/banners'),
+    createBanner: (data) => api.post('/admin/banners', data),
+    deleteBanner: (id) => api.delete(`/admin/banners/${id}`),
+
+    getAnnouncements: () => api.get('/admin/announcements'),
+    createAnnouncement: (data) => api.post('/admin/announcements', data),
+    deleteAnnouncement: (id) => api.delete(`/admin/announcements/${id}`),
 
     // Notifications
     sendNotification: (data) => api.post('/admin/notifications/send', data),
@@ -132,11 +143,12 @@ export const adminAPI = {
     // Audit Logs
     getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
 
-    // Legal Templates
+    // Documents
     getLegalTemplates: () => api.get('/admin/documents/templates'),
     createLegalTemplate: (data) => api.post('/admin/documents/templates', data),
     updateLegalTemplate: (id, data) => api.put(`/admin/documents/templates/${id}`, data),
     deleteLegalTemplate: (id) => api.delete(`/admin/documents/templates/${id}`),
+    getGeneratedDocs: () => api.get('/admin/documents/generated'),
 };
 
 export const fdsAPI = {

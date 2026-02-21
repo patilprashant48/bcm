@@ -387,6 +387,15 @@ const announcementSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+const bannerSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    imageUrl: { type: String, required: true },
+    linkUrl: { type: String },
+    position: { type: String, enum: ['HERO', 'SIDEBAR', 'FOOTER'], default: 'HERO' },
+    isActive: { type: Boolean, default: true },
+    createdAt: { type: Date, default: Date.now }
+});
+
 // =====================================================
 // PLATFORM SETTINGS & WATCHLIST
 // =====================================================
@@ -485,6 +494,7 @@ module.exports = {
     GeneratedDocument: mongoose.model('GeneratedDocument', generatedDocumentSchema),
     Notification: mongoose.model('Notification', notificationSchema),
     Announcement: mongoose.model('Announcement', announcementSchema),
+    Banner: mongoose.model('Banner', bannerSchema),
     PlatformSetting: mongoose.model('PlatformSetting', platformSettingSchema),
     Watchlist: mongoose.model('Watchlist', watchlistSchema),
     FDScheme: mongoose.model('FDScheme', fdSchemeSchema)
