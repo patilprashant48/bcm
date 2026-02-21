@@ -196,8 +196,8 @@ exports.updateProject = async (req, res) => {
         if (business_plan) project.businessPlan = business_plan; // Check schema
         if (risk_factors) project.riskFactors = risk_factors; // Check schema
 
-        // Reset to NEW for admin re-evaluation
-        project.status = 'NEW';
+        // Reset to RESUBMIT for admin re-evaluation
+        project.status = 'RESUBMIT';
         project.updatedAt = new Date();
 
         await project.save();
@@ -229,7 +229,7 @@ exports.deleteProject = async (req, res) => {
     try {
         const project = await Project.findOne({
             _id: req.params.id,
-            business_id: req.user.id
+            userId: req.user.id
         });
 
         if (!project) {

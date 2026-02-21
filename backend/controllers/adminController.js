@@ -214,7 +214,7 @@ exports.getBusinesses = async (req, res) => {
  */
 exports.approveBusiness = async (req, res) => {
     try {
-        const business = await Business.findById(req.params.id);
+        const business = await Business.findById(req.params.id).populate('userId', 'email name');
 
         if (!business) {
             return res.status(404).json({
@@ -224,11 +224,23 @@ exports.approveBusiness = async (req, res) => {
         }
 
         business.approvalStatus = 'ACTIVE';
+        if (!business.userBusinessId) {
+            // Generate simple ID
+            const count = await Business.countDocuments();
+            business.userBusinessId = `BCM-BUS-${(count + 1).toString().padStart(4, '0')}`;
+        }
+        business.updatedAt = new Date();
         await business.save();
+
+        const emailService = require('../services/emailService');
+        if (business.userId && business.userId.email) {
+            await emailService.sendBusinessApprovalEmail(business.userId.email, business.businessName, 'ACTIVE');
+        }
 
         res.json({
             success: true,
-            message: 'Business approved successfully'
+            message: 'Business approved successfully, ID generated, and email sent',
+            business
         });
     } catch (error) {
         console.error('Approve business error:', error);
@@ -245,7 +257,8 @@ exports.approveBusiness = async (req, res) => {
  */
 exports.rejectBusiness = async (req, res) => {
     try {
-        const business = await Business.findById(req.params.id);
+        const { reason } = req.body;
+        const business = await Business.findById(req.params.id).populate('userId', 'email name');
 
         if (!business) {
             return res.status(404).json({
@@ -255,7 +268,14 @@ exports.rejectBusiness = async (req, res) => {
         }
 
         business.approvalStatus = 'REJECTED';
+        if (reason) business.rejectionComments = { reason };
+        business.updatedAt = new Date();
         await business.save();
+
+        const emailService = require('../services/emailService');
+        if (business.userId && business.userId.email) {
+            await emailService.sendBusinessApprovalEmail(business.userId.email, business.businessName, 'REJECTED', { reason });
+        }
 
         res.json({
             success: true,
@@ -276,7 +296,8 @@ exports.rejectBusiness = async (req, res) => {
  */
 exports.recheckBusiness = async (req, res) => {
     try {
-        const business = await Business.findById(req.params.id);
+        const { comments } = req.body;
+        const business = await Business.findById(req.params.id).populate('userId', 'email name');
 
         if (!business) {
             return res.status(404).json({
@@ -286,11 +307,18 @@ exports.recheckBusiness = async (req, res) => {
         }
 
         business.approvalStatus = 'RECHECK';
+        if (comments) business.rejectionComments = { comments }; // reuse field
+        business.updatedAt = new Date();
         await business.save();
+
+        const emailService = require('../services/emailService');
+        if (business.userId && business.userId.email) {
+            await emailService.sendBusinessApprovalEmail(business.userId.email, business.businessName, 'RECHECK', { comments });
+        }
 
         res.json({
             success: true,
-            message: 'Business marked for recheck'
+            message: 'Business marked for recheck and user notified'
         });
     } catch (error) {
         console.error('Recheck business error:', error);
@@ -663,13 +691,67 @@ exports.getLoans = async (req, res) => {
 exports.approveLoan = async (req, res) => {
     try {
         const CapitalOption = models.CapitalOption;
-        const loan = await CapitalOption.findByIdAndUpdate(
-            req.params.id,
-            { approvalStatus: 'APPROVED', approvedAt: new Date() },
-            { new: true }
-        );
+        const PlatformSetting = models.PlatformSetting;
+        const ledgerService = require('../services/ledgerService');
+        const { WALLET_TYPES, REFERENCE_TYPES } = require('../config/constants');
+
+        const loan = await CapitalOption.findById(req.params.id).populate({
+            path: 'projectId',
+            select: 'userId'
+        });
+
         if (!loan) return res.status(404).json({ success: false, message: 'Loan not found' });
-        res.json({ success: true, message: 'Loan approved successfully', loan });
+
+        // Deduct Processing Fee
+        const setting = await PlatformSetting.findOne({ settingKey: 'loan_processing_fee_percent' });
+        const feePercent = setting ? parseFloat(setting.settingValue) : 0;
+        let feeAmount = 0;
+
+        if (feePercent > 0) {
+            feeAmount = (loan.targetAmount * feePercent) / 100;
+            const businessUserId = loan.projectId.userId;
+
+            // Get Business Wallet
+            const walletResult = await ledgerService.getWallet(businessUserId, WALLET_TYPES.BUSINESS);
+            if (!walletResult.success) {
+                return res.status(400).json({ success: false, message: 'Failed to access business wallet for fee deduction' });
+            }
+
+            // Deduct from Business Wallet
+            const debitResult = await ledgerService.debitWallet(
+                walletResult.wallet._id,
+                feeAmount,
+                `Loan Processing Fee (${feePercent}%)`,
+                REFERENCE_TYPES.FEE || 'FEE',
+                loan._id,
+                null,
+                req.user.id
+            );
+
+            if (!debitResult.success) {
+                return res.status(400).json({ success: false, message: 'Insufficient balance for loan processing fee' });
+            }
+
+            // Credit to Admin Wallet
+            const adminWalletResult = await ledgerService.getWallet(req.user.id, 'MAIN');
+            if (adminWalletResult.success) {
+                await ledgerService.creditWallet(
+                    adminWalletResult.wallet._id,
+                    feeAmount,
+                    `Loan Processing Fee Received`,
+                    REFERENCE_TYPES.FEE || 'FEE',
+                    loan._id,
+                    null,
+                    req.user.id
+                );
+            }
+        }
+
+        loan.approvalStatus = 'APPROVED';
+        loan.approvedAt = new Date();
+        await loan.save();
+
+        res.json({ success: true, message: `Loan approved successfully. Processing fee deducted: ₹${feeAmount}`, loan });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to approve loan', error: error.message });
     }

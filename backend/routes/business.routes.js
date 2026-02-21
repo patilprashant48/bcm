@@ -65,8 +65,47 @@ router.get('/active-plan', authenticateToken, isBusinessUser, planController.get
 router.get('/documents/templates', authenticateToken, isBusinessUser, async (req, res) => {
     try {
         const models = require('../database/mongodb-schema');
+        const userId = req.user.id;
+
         const templates = await models.DocumentTemplate.find({ isActive: true }).sort({ updatedAt: -1 });
-        res.json({ success: true, templates });
+
+        // Check if user has active plan
+        const activePlan = await models.UserPlan.findOne({
+            userId,
+            status: 'ACTIVE',
+            endDate: { $gt: new Date() }
+        });
+
+        if (activePlan) {
+            // Auto fill placeholders
+            const business = await models.Business.findOne({ userId }).populate('userId');
+            if (business) {
+                const replacements = {
+                    '{{BUSINESS_NAME}}': business.businessName || '',
+                    '{{OWNER_NAME}}': business.userId?.name || business.contactPerson || '',
+                    '{{MOBILE}}': business.userId?.mobile || business.contactMobile || '',
+                    '{{EMAIL}}': business.userId?.email || business.contactEmail || '',
+                    '{{ADDRESS}}': `${business.address || ''}, ${business.city || ''}, ${business.state || ''}`,
+                    '{{PLAN_ACTIVATION_DATE}}': new Date(activePlan.startDate).toLocaleDateString()
+                };
+
+                const processedTemplates = templates.map(tpl => {
+                    let text = tpl.templateContent || '';
+                    for (const [key, value] of Object.entries(replacements)) {
+                        text = text.replace(new RegExp(key, 'g'), value);
+                    }
+                    return {
+                        ...tpl.toObject(),
+                        templateContent: text,
+                        autoFilled: true
+                    };
+                });
+
+                return res.json({ success: true, templates: processedTemplates, autoFilled: true });
+            }
+        }
+
+        res.json({ success: true, templates, autoFilled: false });
     } catch (error) {
         console.error('Get Legal Templates error:', error);
         res.status(500).json({ success: false, message: 'Failed to fetch templates' });

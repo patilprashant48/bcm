@@ -465,15 +465,20 @@ exports.approvePayment = async (req, res) => {
                 adminId
             );
         } else {
-            // For Deposit (Top-Up): Credit User Wallet
-            // We SKIP debiting Admin wallet to prevent issues with Admin Balance
-            transactionResult = await ledgerService.creditWallet(
+            // For Deposit (Top-Up): Credit User Wallet and Debit Admin Wallet
+            const adminWalletResult = await ledgerService.getWallet(adminId, 'MAIN');
+            if (!adminWalletResult.success) {
+                throw new Error('Failed to get Admin MAIN wallet');
+            }
+
+            // Transfer from Admin to User
+            transactionResult = await ledgerService.transferFunds(
+                adminWalletResult.wallet._id,
                 userWalletResult.wallet._id,
                 paymentRequest.amount,
                 'Wallet top-up',
                 REFERENCE_TYPES.TOPUP,
                 requestId,
-                null,
                 adminId
             );
         }

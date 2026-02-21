@@ -85,6 +85,25 @@ exports.activatePlan = async (req, res) => {
             return res.status(500).json({ success: false, message: 'Transaction failed', error: debitRes.error });
         }
 
+        // Credit Admin Wallet
+        const adminWalletRes = await ledgerService.getWallet(
+            // To get Admin wallet reliably, we could fetch an admin user or use a fixed constant if 1 admin.
+            // Using a simple workaround to find an admin.
+            await models.User.findOne({ role: 'SUPER_ADMIN' }).then(u => u ? u._id : userId),
+            'MAIN'
+        );
+        if (adminWalletRes.success) {
+            await ledgerService.creditWallet(
+                adminWalletRes.wallet._id,
+                plan.price,
+                `Plan Activation Received: ${plan.planName} by ${userId}`,
+                REFERENCE_TYPES.SUBSCRIPTION || 'SUBSCRIPTION',
+                plan._id,
+                { buyer_id: userId },
+                userId
+            );
+        }
+
         // Create UserPlan
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + plan.validityDays);

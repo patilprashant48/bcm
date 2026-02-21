@@ -87,6 +87,12 @@ class EmailService {
         <p><strong>Comments:</strong></p>
         <pre>${JSON.stringify(comments, null, 2)}</pre>
       `;
+        } else if (status === 'REJECTED') {
+            html += `
+        <p>We regret to inform you that your business application has been rejected.</p>
+        <p><strong>Reason:</strong></p>
+        <pre>${JSON.stringify(comments, null, 2)}</pre>
+      `;
         }
 
         html += `
