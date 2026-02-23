@@ -710,7 +710,7 @@ exports.getAdminWallet = async (req, res) => {
             adminUser = { _id: req.user.id, email: req.user.email };
         }
 
-        // Compute totals from approved PaymentRequests (source of truth for admin funds)
+        // Compute totals from approved PaymentRequests (covers business top-ups)
         const [depositAgg, withdrawalAgg] = await Promise.all([
             models.PaymentRequest.aggregate([
                 { $match: { status: 'APPROVED', type: 'DEPOSIT' } },
@@ -722,8 +722,25 @@ exports.getAdminWallet = async (req, res) => {
             ])
         ]);
 
-        const totalCredits = depositAgg[0]?.total || 0;
-        const totalDebits = withdrawalAgg[0]?.total || 0;
+        const paymentCredits = depositAgg[0]?.total || 0;
+        const paymentDebits = withdrawalAgg[0]?.total || 0;
+
+        // Also include manual top-ups written directly to admin ADMIN wallet ledger
+        const adminWallets = await models.Wallet.find({ userId: req.user.id, walletType: WALLET_TYPES.ADMIN });
+        const adminWalletIds = adminWallets.map(w => w._id);
+        const adminEntries = adminWalletIds.length > 0
+            ? await models.LedgerEntry.find({
+                walletId: { $in: adminWalletIds },
+                referenceType: REFERENCE_TYPES.TOPUP,
+                description: { $regex: /Admin wallet top-up/i }
+              })
+            : [];
+        const manualTopUpTotal = adminEntries
+            .filter(e => e.entryType === 'CREDIT')
+            .reduce((s, e) => s + e.amount, 0);
+
+        const totalCredits = paymentCredits + manualTopUpTotal;
+        const totalDebits = paymentDebits;
         const balance = totalCredits - totalDebits;
 
         const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -739,8 +756,6 @@ exports.getAdminWallet = async (req, res) => {
         ]);
 
         const monthTotal = monthAgg[0]?.total || 0;
-
-        const adminWallets = await models.Wallet.find({ userId: req.user.id });
 
         res.json({
             success: true,
@@ -794,7 +809,7 @@ exports.getAdminTransactions = async (req, res) => {
  */
 exports.topUpAdminWallet = async (req, res) => {
     try {
-        const { amount, walletType = 'MAIN', description = 'Admin wallet top-up' } = req.body;
+        const { amount, description = 'Admin wallet top-up' } = req.body;
 
         if (!amount || amount <= 0) {
             return res.status(400).json({
@@ -803,25 +818,30 @@ exports.topUpAdminWallet = async (req, res) => {
             });
         }
 
-        // Create a credit transaction for admin wallet
-        const result = await ledgerService.createTransaction({
-            userId: req.user.id,
-            type: 'CREDIT',
-            amount: parseFloat(amount),
-            walletType: walletType,
-            referenceType: REFERENCE_TYPES.ADMIN_TOPUP,
-            description: description,
-            status: 'COMPLETED'
-        });
+        // Get (or create) the admin's ADMIN wallet
+        const walletResult = await ledgerService.getWallet(req.user.id, WALLET_TYPES.ADMIN);
+        if (!walletResult.success) {
+            throw new Error(walletResult.error || 'Failed to get admin wallet');
+        }
 
-        if (!result.success) {
-            throw new Error(result.error);
+        const creditResult = await ledgerService.creditWallet(
+            walletResult.wallet._id,
+            parseFloat(amount),
+            description,
+            REFERENCE_TYPES.TOPUP,
+            null,
+            { topped_up_by: req.user.id },
+            req.user.id
+        );
+
+        if (!creditResult.success) {
+            throw new Error(creditResult.error || 'Failed to credit admin wallet');
         }
 
         res.json({
             success: true,
             message: 'Admin wallet topped up successfully',
-            transaction: result.transaction
+            newBalance: creditResult.balance
         });
     } catch (error) {
         console.error('Top up admin wallet error:', error);
