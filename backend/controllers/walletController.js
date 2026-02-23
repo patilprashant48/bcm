@@ -35,8 +35,11 @@ exports.getWallets = async (req, res) => {
             throw new Error(result.error);
         }
 
+        // Add top-level balance (sum of all wallets) for mobile app compatibility
+        const totalBalance = result.wallets.reduce((sum, w) => sum + (w.balance || 0), 0);
         res.json({
             success: true,
+            balance: parseFloat(totalBalance.toFixed(2)),
             wallets: result.wallets
         });
     } catch (error) {
@@ -168,7 +171,7 @@ exports.getTransactions = async (req, res) => {
 
         // Get transactions from all wallets
         const walletIds = wallets.map(w => w._id);
-        const transactions = await models.WalletTransaction.find({
+        const transactions = await models.LedgerEntry.find({
             walletId: { $in: walletIds }
         })
             .sort({ createdAt: -1 })

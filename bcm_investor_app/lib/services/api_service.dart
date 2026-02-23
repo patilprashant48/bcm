@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
@@ -136,14 +137,25 @@ class ApiService {
   }
 
   Future<void> topUpWallet(double amount, String paymentMethod, String transactionId, String screenshotPath) async {
+    // Encode the screenshot image as base64 data URL so admin can view it
+    String screenshotUrl = '';
+    try {
+      final imageFile = File(screenshotPath);
+      final imageBytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(imageBytes);
+      screenshotUrl = 'data:image/jpeg;base64,$base64Image';
+    } catch (e) {
+      screenshotUrl = screenshotPath; // fallback
+    }
+
     final response = await http.post(
       Uri.parse('$baseUrl/wallet/topup'),
       headers: await _getHeaders(),
       body: json.encode({
         'amount': amount,
-        'paymentMethod': paymentMethod, // 'BANK_TRANSFER' or 'UPI'
+        'paymentMethod': paymentMethod,
         'transactionId': transactionId,
-        'paymentScreenshotUrl': 'https://placeholder.com/dummy-screenshot.jpg', // Mocking URL since we track local file path
+        'paymentScreenshotUrl': screenshotUrl,
       }),
     );
     

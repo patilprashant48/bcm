@@ -1,22 +1,43 @@
 import { useState, useEffect } from 'react';
 import { walletAPI } from '../../services/api';
 
-const ScreenshotModal = ({ url, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4" onClick={onClose}>
-        <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-            <button onClick={onClose} className="absolute -top-10 right-0 text-white text-3xl font-bold hover:text-gray-300">×</button>
-            <img
-                src={url}
-                alt="Payment Screenshot"
-                className="w-full rounded-2xl shadow-2xl bg-gray-100 min-h-[300px] object-cover"
-                onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://via.placeholder.com/600x800.png?text=Image+Not+Found+or+Invalid+URL';
-                }}
-            />
+const ScreenshotModal = ({ url, onClose }) => {
+    const isDummy = !url || url.includes('placeholder.com') || url === '';
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute -top-10 right-0 text-white text-3xl font-bold hover:text-gray-300">×</button>
+                {isDummy ? (
+                    <div className="bg-white rounded-2xl shadow-2xl p-12 text-center">
+                        <div className="text-6xl mb-4">🖼️</div>
+                        <p className="text-xl font-semibold text-gray-700">Screenshot Not Available</p>
+                        <p className="text-gray-500 mt-2 text-sm">The user submitted a payment request but the screenshot was not uploaded correctly.</p>
+                    </div>
+                ) : url.startsWith('data:') ? (
+                    <img
+                        src={url}
+                        alt="Payment Screenshot"
+                        className="w-full rounded-2xl shadow-2xl bg-gray-100 max-h-[80vh] object-contain"
+                    />
+                ) : (
+                    <img
+                        src={url}
+                        alt="Payment Screenshot"
+                        className="w-full rounded-2xl shadow-2xl bg-gray-100 max-h-[80vh] object-contain"
+                        onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'block';
+                        }}
+                    />
+                )}
+                <a href={url} target="_blank" rel="noreferrer"
+                    className="block mt-3 text-center text-white text-sm underline opacity-70 hover:opacity-100">
+                    Open in new tab
+                </a>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const PaymentRequests = () => {
     const [requests, setRequests] = useState([]);
