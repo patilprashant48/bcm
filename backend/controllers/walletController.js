@@ -503,6 +503,26 @@ exports.approvePayment = async (req, res) => {
             });
         }
 
+        // For DEPOSIT: also record the receipt in the admin wallet so its balance reflects incoming funds
+        if (paymentRequest.type !== 'WITHDRAWAL') {
+            try {
+                const adminWalletResult = await ledgerService.getWallet(adminId, WALLET_TYPES.ADMIN);
+                if (adminWalletResult.success) {
+                    await ledgerService.creditWallet(
+                        adminWalletResult.wallet._id,
+                        paymentRequest.amount,
+                        `Top-up received from ${paymentRequest.userId.email}`,
+                        REFERENCE_TYPES.TOPUP,
+                        requestId,
+                        { user_id: paymentRequest.userId._id },
+                        adminId
+                    );
+                }
+            } catch (adminWalletErr) {
+                console.error('Failed to credit admin wallet (non-fatal):', adminWalletErr);
+            }
+        }
+
         // Update payment request status
         paymentRequest.status = PAYMENT_STATUS.APPROVED;
         paymentRequest.adminId = adminId;
@@ -690,25 +710,37 @@ exports.getAdminWallet = async (req, res) => {
             adminUser = { _id: req.user.id, email: req.user.email };
         }
 
-        // Compute balances from ledger entries on admin wallets
-        const adminWallets = await models.Wallet.find({ userId: req.user.id });
-        const walletIds = adminWallets.map(w => w._id);
-        const entries = await models.LedgerEntry.find({ walletId: { $in: walletIds } });
+        // Compute totals from approved PaymentRequests (source of truth for admin funds)
+        const [depositAgg, withdrawalAgg] = await Promise.all([
+            models.PaymentRequest.aggregate([
+                { $match: { status: 'APPROVED', type: 'DEPOSIT' } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            models.PaymentRequest.aggregate([
+                { $match: { status: 'APPROVED', type: 'WITHDRAWAL' } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ])
+        ]);
 
-        const totalCredits = entries.filter(e => e.entryType === 'CREDIT').reduce((s, e) => s + e.amount, 0);
-        const totalDebits = entries.filter(e => e.entryType === 'DEBIT').reduce((s, e) => s + e.amount, 0);
+        const totalCredits = depositAgg[0]?.total || 0;
+        const totalDebits = withdrawalAgg[0]?.total || 0;
         const balance = totalCredits - totalDebits;
 
         const today = new Date(); today.setHours(0, 0, 0, 0);
-        const [pendingPayments, approvedToday] = await Promise.all([
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+        const [pendingPayments, approvedToday, monthAgg] = await Promise.all([
             models.PaymentRequest.countDocuments({ status: 'PENDING' }),
-            models.PaymentRequest.countDocuments({ status: 'APPROVED', processedAt: { $gte: today } })
+            models.PaymentRequest.countDocuments({ status: 'APPROVED', processedAt: { $gte: today } }),
+            models.PaymentRequest.aggregate([
+                { $match: { status: 'APPROVED', type: 'DEPOSIT', processedAt: { $gte: monthStart } } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ])
         ]);
 
-        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        const monthTotal = entries
-            .filter(e => new Date(e.createdAt) >= monthStart && e.entryType === 'CREDIT')
-            .reduce((s, e) => s + e.amount, 0);
+        const monthTotal = monthAgg[0]?.total || 0;
+
+        const adminWallets = await models.Wallet.find({ userId: req.user.id });
 
         res.json({
             success: true,
