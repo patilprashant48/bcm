@@ -1076,8 +1076,25 @@ exports.updateAdminStatus = async (req, res) => {
 
 exports.getAuditLogs = async (req, res) => {
     try {
-        const AuditLog = models.AuditLog || models.Transaction;
-        const logs = await AuditLog.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).limit(100);
+        const entries = await models.LedgerEntry
+            .find({})
+            .populate({ path: 'walletId', populate: { path: 'userId', select: 'email role' } })
+            .populate('createdBy', 'email role')
+            .sort({ createdAt: -1 })
+            .limit(200);
+
+        const logs = entries.map(e => ({
+            id: e._id,
+            created_at: e.createdAt,
+            user_email: e.walletId?.userId?.email || e.createdBy?.email || 'System',
+            user_name: e.walletId?.userId?.email || e.createdBy?.email || 'System',
+            user_type: (e.walletId?.userId?.role || e.createdBy?.role || 'SYSTEM')
+                .replace('BUSINESS_USER', 'BUSINESS').replace('_USER', ''),
+            action: e.entryType === 'CREDIT' ? 'CREDIT_TRANSACTION' : 'DEBIT_TRANSACTION',
+            resource_type: e.referenceType || 'LEDGER',
+            details: e.description,
+            ip_address: '—',
+        }));
         res.json({ success: true, logs });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get audit logs', error: error.message });
@@ -1086,11 +1103,34 @@ exports.getAuditLogs = async (req, res) => {
 
 exports.sendNotification = async (req, res) => {
     try {
-        const { userId, title, message, type } = req.body;
-        const Notification = models.Notification;
-        const notification = new Notification({ userId, title, message, type, createdAt: new Date() });
-        await notification.save();
-        res.json({ success: true, message: 'Notification sent', notification });
+        const { title, message, target, priority, userId, type } = req.body;
+
+        if (userId) {
+            // Individual notification
+            const notification = new models.Notification({
+                userId,
+                title,
+                message,
+                notificationType: type || 'GENERAL',
+                createdAt: new Date()
+            });
+            await notification.save();
+        } else {
+            // Broadcast — save as Announcement
+            const audienceMap = { 'INVESTORS': 'INVESTOR', 'BUSINESSES': 'BUSINESS_USER', 'ADMIN': 'ADMIN' };
+            const priorityMap = { 'HIGH': 'HIGH', 'MEDIUM': 'MEDIUM', 'LOW': 'LOW', 'NORMAL': 'MEDIUM' };
+            const announcement = new models.Announcement({
+                title,
+                message,
+                priority: priorityMap[priority] || 'MEDIUM',
+                targetAudience: audienceMap[target], // undefined for 'ALL' = broadcast
+                isActive: true,
+                createdAt: new Date()
+            });
+            await announcement.save();
+        }
+
+        res.json({ success: true, message: 'Notification sent successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to send notification', error: error.message });
     }

@@ -621,37 +621,41 @@ exports.getPlatformPaymentDetails = async (req, res) => {
  */
 exports.getAllTransactions = async (req, res) => {
     try {
-        const { page = 1, limit = 50, userId, type, status } = req.query;
-
+        const { page = 1, limit = 100, type } = req.query;
         const filter = {};
-        if (userId) filter.userId = userId;
-        if (type) filter.type = type;
-        if (status) filter.status = status;
+        if (type && type !== 'ALL') filter.entryType = type;
 
-        const transactions = await models.Transaction.find(filter)
-            .populate('userId', 'name email')
+        const entries = await models.LedgerEntry.find(filter)
+            .populate({ path: 'walletId', populate: { path: 'userId', select: 'email role' } })
             .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
+            .limit(parseInt(limit))
+            .skip((parseInt(page) - 1) * parseInt(limit));
 
-        const total = await models.Transaction.countDocuments(filter);
+        const transactions = entries.map(e => ({
+            id: e._id,
+            amount: e.amount,
+            type: e.entryType,
+            entryType: e.entryType,
+            referenceType: e.referenceType,
+            reference_type: e.referenceType,
+            description: e.description,
+            created_at: e.createdAt,
+            createdAt: e.createdAt,
+            user_email: e.walletId?.userId?.email || 'System',
+            user_name: e.walletId?.userId?.email || 'System',
+            wallet_type: e.walletId?.walletType,
+        }));
+
+        const total = await models.LedgerEntry.countDocuments(filter);
 
         res.json({
             success: true,
             transactions,
-            pagination: {
-                total,
-                page: parseInt(page),
-                pages: Math.ceil(total / limit)
-            }
+            pagination: { total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) }
         });
     } catch (error) {
         console.error('Get all transactions error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to get transactions',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Failed to get transactions', error: error.message });
     }
 };
 
@@ -660,36 +664,45 @@ exports.getAllTransactions = async (req, res) => {
  */
 exports.getAdminWallet = async (req, res) => {
     try {
-        // Get admin user
         const adminUser = await models.User.findById(req.user.id);
         if (!adminUser) {
-            return res.status(404).json({
-                success: false,
-                message: 'Admin user not found'
-            });
+            return res.status(404).json({ success: false, message: 'Admin user not found' });
         }
 
-        // Get admin wallet balances
-        const result = await ledgerService.getUserWallets(req.user.id);
+        // Compute balances from ledger entries on admin wallets
+        const adminWallets = await models.Wallet.find({ userId: req.user.id });
+        const walletIds = adminWallets.map(w => w._id);
+        const entries = await models.LedgerEntry.find({ walletId: { $in: walletIds } });
+
+        const totalCredits = entries.filter(e => e.entryType === 'CREDIT').reduce((s, e) => s + e.amount, 0);
+        const totalDebits = entries.filter(e => e.entryType === 'DEBIT').reduce((s, e) => s + e.amount, 0);
+        const balance = totalCredits - totalDebits;
+
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const [pendingPayments, approvedToday] = await Promise.all([
+            models.PaymentRequest.countDocuments({ status: 'PENDING' }),
+            models.PaymentRequest.countDocuments({ status: 'APPROVED', processedAt: { $gte: today } })
+        ]);
+
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthTotal = entries
+            .filter(e => new Date(e.createdAt) >= monthStart && e.entryType === 'CREDIT')
+            .reduce((s, e) => s + e.amount, 0);
 
         res.json({
             success: true,
-            wallet: {
-                userId: req.user.id,
-                user: {
-                    name: adminUser.name,
-                    email: adminUser.email
-                },
-                wallets: result.wallets || []
-            }
+            balance: parseFloat(balance.toFixed(2)),
+            total_received: parseFloat(totalCredits.toFixed(2)),
+            total_paid: parseFloat(totalDebits.toFixed(2)),
+            pending_payments: pendingPayments,
+            approved_today: approvedToday,
+            commission_earned: 0,
+            month_total: parseFloat(monthTotal.toFixed(2)),
+            wallet: { userId: req.user.id, user: { email: adminUser.email }, wallets: adminWallets }
         });
     } catch (error) {
         console.error('Get admin wallet error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to get admin wallet',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Failed to get admin wallet', error: error.message });
     }
 };
 
@@ -698,31 +711,28 @@ exports.getAdminWallet = async (req, res) => {
  */
 exports.getAdminTransactions = async (req, res) => {
     try {
-        const { page = 1, limit = 50 } = req.query;
+        const adminWallets = await models.Wallet.find({ userId: req.user.id });
+        const walletIds = adminWallets.map(w => w._id);
 
-        const transactions = await models.Transaction.find({ userId: req.user.id })
+        const entries = await models.LedgerEntry.find({ walletId: { $in: walletIds } })
             .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
+            .limit(100);
 
-        const total = await models.Transaction.countDocuments({ userId: req.user.id });
+        const transactions = entries.map(e => ({
+            id: e._id,
+            amount: e.amount,
+            type: e.entryType,
+            entryType: e.entryType,
+            description: e.description,
+            referenceType: e.referenceType,
+            created_at: e.createdAt,
+            createdAt: e.createdAt,
+        }));
 
-        res.json({
-            success: true,
-            transactions,
-            pagination: {
-                total,
-                page: parseInt(page),
-                pages: Math.ceil(total / limit)
-            }
-        });
+        res.json({ success: true, transactions, pagination: { total: transactions.length, page: 1, pages: 1 } });
     } catch (error) {
         console.error('Get admin transactions error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to get admin transactions',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Failed to get admin transactions', error: error.message });
     }
 };
 

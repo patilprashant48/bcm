@@ -41,7 +41,7 @@ const FDDetailModal = ({ scheme, onClose, onAction }) => {
                             ['Maturity Period', `${scheme.maturityDays} days`],
                             ['Minimum Amount', `₹${(scheme.minAmount || 0).toLocaleString()}`],
                             ['Maximum Amount', scheme.maxAmount ? `₹${scheme.maxAmount.toLocaleString()}` : 'No Limit'],
-                            ['Created By', scheme.createdBy || 'Admin'],
+                            ['Created By', scheme.createdBy?.email || (typeof scheme.createdBy === 'string' ? scheme.createdBy : 'Admin')],
                             ['Created On', scheme.createdAt ? new Date(scheme.createdAt).toLocaleDateString() : 'N/A'],
                         ].map(([label, value]) => (
                             <div key={label} className="bg-gray-50 rounded-lg p-3">
