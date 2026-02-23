@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Wallet from './pages/Wallet';
 import MyProjects from './pages/Projects/MyProjects';
 import CreateProject from './pages/Projects/CreateProject';
+import ProjectDetail from './pages/Projects/ProjectDetail';
 import CapitalTools from './pages/CapitalTools';
 import Plans from './pages/Plans';
 import Profile from './pages/Profile';
@@ -61,6 +62,7 @@ const AppRoutes = () => {
                 <Route path="wallet" element={<Wallet />} />
                 <Route path="projects" element={<MyProjects />} />
                 <Route path="projects/create" element={<CreateProject />} />
+                <Route path="projects/:id" element={<ProjectDetail />} />
                 <Route path="projects/edit/:id" element={<CreateProject />} />
                 <Route path="capital" element={<CapitalTools />} />
                 <Route path="plans" element={<Plans />} />
