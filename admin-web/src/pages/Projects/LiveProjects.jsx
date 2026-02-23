@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../../services/api';
 
+// v2 — uses getProjectsByStatus('LIVE') for correct field mapping
 const LiveProjects = () => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
