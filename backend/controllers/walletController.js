@@ -346,21 +346,36 @@ exports.getAllPaymentRequests = async (req, res) => {
 
         const requests = await models.PaymentRequest
             .find({ status })
-            .populate('userId', 'email')
+            .populate('userId', 'email role')
             .sort({ createdAt: -1 });
 
+        // Batch-fetch business profiles for all userIds
+        const userIds = requests.map(r => r.userId?._id).filter(Boolean);
+        const businessProfiles = await models.BusinessProfile
+            .find({ userId: { $in: userIds } }, 'userId businessName')
+            .lean();
+        const businessNameMap = {};
+        for (const bp of businessProfiles) {
+            businessNameMap[bp.userId.toString()] = bp.businessName;
+        }
+
         // Format response to match frontend expectations
-        const formattedRequests = requests.map(req => ({
-            ...req.toObject(),
-            id: req._id,
-            created_at: req.createdAt,
-            payment_method: req.paymentMethod,
-            payment_screenshot_url: req.paymentScreenshotUrl,
-            user_email: req.userId?.email,
-            users: {
-                email: req.userId?.email
-            }
-        }));
+        const formattedRequests = requests.map(r => {
+            const uid = r.userId?._id?.toString();
+            return {
+                ...r.toObject(),
+                id: r._id,
+                created_at: r.createdAt,
+                payment_method: r.paymentMethod,
+                payment_screenshot_url: r.paymentScreenshotUrl,
+                user_email: r.userId?.email,
+                business_name: businessNameMap[uid] || null,
+                users: {
+                    email: r.userId?.email,
+                    role: r.userId?.role
+                }
+            };
+        });
 
         res.json({
             success: true,
