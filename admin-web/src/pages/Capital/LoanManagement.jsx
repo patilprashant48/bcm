@@ -19,7 +19,7 @@ const LoanDetailModal = ({ loan, onClose, onAction }) => {
         }
     };
 
-    const isPending = loan.status === 'PENDING' || loan.status === 'NEW';
+    const isPending = loan.approvalStatus === 'PENDING' || !loan.approvalStatus;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -27,7 +27,7 @@ const LoanDetailModal = ({ loan, onClose, onAction }) => {
                 <div className="bg-gradient-to-r from-green-600 to-teal-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
                     <div>
                         <h2 className="text-xl font-bold text-white">Loan Application</h2>
-                        <p className="text-green-100 text-sm">{loan.business_name || loan.businessName}</p>
+                        <p className="text-green-100 text-sm">{loan.projectName || loan.business_name || loan.businessName || 'Loan Details'}</p>
                     </div>
                     <button onClick={onClose} className="text-white hover:text-green-200 text-2xl font-bold">×</button>
                 </div>
@@ -35,14 +35,15 @@ const LoanDetailModal = ({ loan, onClose, onAction }) => {
                 <div className="p-6 space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         {[
-                            ['Business Name', loan.business_name || loan.businessName],
+                            ['Project / Business', loan.projectName || loan.business_name || '—'],
+                            ['Business Email', loan.businessEmail || loan.business_email || '—'],
                             ['Loan Amount', `₹${(loan.loan_amount || loan.loanAmount || 0).toLocaleString()}`],
                             ['Interest Rate', `${loan.interest_rate || loan.interestRate}% p.a.`],
                             ['Tenure', `${loan.tenure_months || loan.tenureMonths} months`],
                             ['EMI Amount', `₹${(loan.emi_amount || loan.emiAmount || 0).toLocaleString()}`],
                             ['Processing Fee', `₹${(loan.processing_fee || loan.processingFee || 0).toLocaleString()}`],
                             ['Total Repayable', `₹${((loan.emi_amount || loan.emiAmount || 0) * (loan.tenure_months || loan.tenureMonths || 0)).toLocaleString()}`],
-                            ['Applied On', loan.created_at ? new Date(loan.created_at).toLocaleDateString() : 'N/A'],
+                            ['Applied On', loan.created_at || loan.createdAt ? new Date(loan.created_at || loan.createdAt).toLocaleDateString() : 'N/A'],
                         ].map(([label, value]) => (
                             <div key={label} className="bg-gray-50 rounded-lg p-3">
                                 <p className="text-xs text-gray-500 mb-1">{label}</p>
@@ -119,10 +120,8 @@ const LoanManagement = () => {
     const loadLoans = async () => {
         try {
             setLoading(true);
-            const response = await adminAPI.getLoans();
-            let data = response.data.loans || [];
-            if (filter !== 'ALL') data = data.filter(l => l.status === filter);
-            setLoans(data);
+            const response = await adminAPI.getLoans(filter !== 'ALL' ? { status: filter } : {});
+            setLoans(response.data.loans || []);
         } catch (err) {
             console.error('Failed to load loans:', err);
             setLoans([]);
@@ -145,15 +144,17 @@ const LoanManagement = () => {
 
     const filtered = loans.filter(l =>
         !search ||
-        (l.business_name || l.businessName || '').toLowerCase().includes(search.toLowerCase())
+        (l.projectName || '').toLowerCase().includes(search.toLowerCase()) ||
+        (l.businessEmail || '').toLowerCase().includes(search.toLowerCase())
     );
 
     const stats = {
         total: loans.length,
-        active: loans.filter(l => l.status === 'ACTIVE').length,
-        pending: loans.filter(l => l.status === 'PENDING' || l.status === 'NEW').length,
-        overdue: loans.filter(l => l.is_overdue || l.isOverdue).length,
-        totalDisbursed: loans.filter(l => l.status === 'ACTIVE').reduce((s, l) => s + (l.loan_amount || l.loanAmount || 0), 0),
+        approved: loans.filter(l => l.approvalStatus === 'APPROVED').length,
+        pending: loans.filter(l => l.approvalStatus === 'PENDING' || !l.approvalStatus).length,
+        recheck: loans.filter(l => l.approvalStatus === 'RECHECK').length,
+        rejected: loans.filter(l => l.approvalStatus === 'REJECTED').length,
+        totalApproved: loans.filter(l => l.approvalStatus === 'APPROVED').reduce((s, l) => s + (l.loan_amount || l.loanAmount || 0), 0),
     };
 
     return (
@@ -177,10 +178,10 @@ const LoanManagement = () => {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                 {[
                     { label: 'Total Loans', value: stats.total, color: 'blue', icon: '📋' },
-                    { label: 'Active', value: stats.active, color: 'green', icon: '✅' },
+                    { label: 'Approved', value: stats.approved, color: 'green', icon: '✅' },
                     { label: 'Pending', value: stats.pending, color: 'yellow', icon: '⏳' },
-                    { label: 'Overdue', value: stats.overdue, color: 'red', icon: '⚠️' },
-                    { label: 'Total Disbursed', value: `₹${(stats.totalDisbursed / 100000).toFixed(1)}L`, color: 'purple', icon: '💰' },
+                    { label: 'Recheck', value: stats.recheck, color: 'orange', icon: '🔄' },
+                    { label: 'Total Approved', value: `₹${(stats.totalApproved / 100000).toFixed(1)}L`, color: 'purple', icon: '💰' },
                 ].map(stat => (
                     <div key={stat.label} className={`bg-white rounded-xl shadow-md p-4 border-l-4 border-${stat.color}-500`}>
                         <div className="flex items-center gap-2 mb-1">
@@ -244,8 +245,8 @@ const LoanManagement = () => {
                                 <tr key={loan._id || loan.id} className="hover:bg-green-50 transition-colors">
                                     <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
                                     <td className="px-4 py-3">
-                                        <p className="font-medium text-gray-800">{loan.business_name || loan.businessName}</p>
-                                        <p className="text-xs text-gray-500">{loan.scheme_name || loan.schemeName}</p>
+                                        <p className="font-medium text-gray-800">{loan.projectName || loan.business_name || loan.businessName || '—'}</p>
+                                        <p className="text-xs text-gray-500">{loan.businessEmail || loan.scheme_name || loan.schemeName || ''}</p>
                                     </td>
                                     <td className="px-4 py-3 text-sm font-semibold text-gray-900">₹{(loan.loan_amount || loan.loanAmount || 0).toLocaleString()}</td>
                                     <td className="px-4 py-3 text-sm text-gray-700">{loan.interest_rate || loan.interestRate}%</td>
@@ -253,13 +254,13 @@ const LoanManagement = () => {
                                     <td className="px-4 py-3 text-sm text-green-600 font-medium">₹{(loan.emi_amount || loan.emiAmount || 0).toLocaleString()}</td>
                                     <td className="px-4 py-3 text-sm text-orange-600">₹{(loan.processing_fee || loan.processingFee || 0).toLocaleString()}</td>
                                     <td className="px-4 py-3">
-                                        <span className={`text-xs px-3 py-1 rounded-full font-semibold ${loan.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                                            loan.status === 'PENDING' || loan.status === 'NEW' ? 'bg-yellow-100 text-yellow-800' :
-                                                loan.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
-                                                    'bg-red-100 text-red-800'
+                                        <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                                            loan.approvalStatus === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                            loan.approvalStatus === 'RECHECK' ? 'bg-blue-100 text-blue-800' :
+                                            loan.approvalStatus === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                                'bg-yellow-100 text-yellow-800'
                                             }`}>
-                                            {loan.status}
-                                            {(loan.is_overdue || loan.isOverdue) && <span className="ml-1 text-red-600">⚠</span>}
+                                            {loan.approvalStatus || 'PENDING'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">

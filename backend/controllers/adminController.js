@@ -726,16 +726,36 @@ exports.updateSettings = async (req, res) => {
 exports.getShares = async (req, res) => {
     try {
         const Share = models.Share;
-        const shares = await Share.find({}).populate({
+        const { status } = req.query;
+        const filter = {};
+        if (status) filter.approvalStatus = status;
+
+        const shares = await Share.find(filter).populate({
             path: 'projectId',
-            select: 'projectName'
-        }).populate('projectId.userId', 'email').sort({ createdAt: -1 });
-        // Mapped projectId to businessId concept somewhat or frontend expects businessId?
-        // Frontend expects businessId.businessName.
-        // Need to check if Share has businessId directly? No, it has projectId.
-        // Project has userId.
-        // I will stick to what schema has.
-        res.json({ success: true, shares });
+            select: 'projectName userId',
+            populate: { path: 'userId', select: 'email mobile' }
+        }).sort({ createdAt: -1 });
+
+        const normalized = shares.map(s => ({
+            _id: s._id,
+            shareName: s.shareName,
+            totalShares: s.totalShares,
+            ownerShares: s.ownerShares,
+            marketShares: s.marketShares,
+            soldShares: s.soldShares || 0,
+            shareValue: s.shareValue,
+            currentPrice: s.currentPrice || s.shareValue,
+            description: s.description,
+            approvalStatus: s.approvalStatus,
+            approvedAt: s.approvedAt,
+            rejectionReason: s.rejectionReason,
+            recheckComments: s.recheckComments,
+            projectName: s.projectId?.projectName,
+            businessEmail: s.projectId?.userId?.email,
+            createdAt: s.createdAt,
+        }));
+
+        res.json({ success: true, shares: normalized });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get shares', error: error.message });
     }
@@ -789,10 +809,30 @@ exports.getLoans = async (req, res) => {
         const filter = { optionType: 'LOAN' };
         if (status) filter.approvalStatus = status;
 
-        const loans = await CapitalOption.find(filter)
-            .populate('projectId', 'projectName')
-            .sort({ createdAt: -1 });
-        res.json({ success: true, loans });
+        const loans = await CapitalOption.find(filter).populate({
+            path: 'projectId',
+            select: 'projectName userId',
+            populate: { path: 'userId', select: 'email mobile' }
+        }).sort({ createdAt: -1 });
+
+        const normalized = loans.map(l => ({
+            _id: l._id,
+            loanAmount: l.loanAmount,
+            interestRate: l.interestRate,
+            tenureMonths: l.tenureMonths,
+            emiAmount: l.emiAmount,
+            processingFee: l.processingFee || 0,
+            approvalStatus: l.approvalStatus,
+            approvedAt: l.approvedAt,
+            rejectedAt: l.rejectedAt,
+            rejectionReason: l.rejectionReason,
+            recheckComments: l.recheckComments,
+            projectName: l.projectId?.projectName,
+            businessEmail: l.projectId?.userId?.email,
+            createdAt: l.createdAt,
+        }));
+
+        res.json({ success: true, loans: normalized });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get loans', error: error.message });
     }
