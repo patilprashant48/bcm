@@ -21,6 +21,7 @@ router.post('/projects/:id/approve', authenticateToken, isAdmin, adminController
 router.post('/projects/:id/reject', authenticateToken, isAdmin, adminController.rejectProject);
 router.post('/projects/:id/recheck', authenticateToken, isAdmin, adminController.recheckProject);
 router.post('/projects/:id/close', authenticateToken, isAdmin, adminController.closeProject);
+router.post('/projects/:id/live', authenticateToken, isAdmin, adminController.makeProjectLive);
 
 // Customer management
 router.get('/customers', authenticateToken, isAdmin, adminController.getCustomers);
@@ -37,6 +38,7 @@ router.get('/plans', authenticateToken, isAdmin, adminController.getPlans);
 router.post('/plans', authenticateToken, isAdmin, adminController.createPlan);
 router.put('/plans/:id', authenticateToken, isAdmin, adminController.updatePlan);
 router.delete('/plans/:id', authenticateToken, isAdmin, adminController.deletePlan);
+router.get('/plans/user-subscriptions', authenticateToken, isAdmin, adminController.getUserPlanSubscriptions);
 
 // Settings
 router.get('/settings', authenticateToken, isAdmin, adminController.getSettings);

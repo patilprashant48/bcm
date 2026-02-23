@@ -185,25 +185,25 @@ exports.getBusinesses = async (req, res) => {
                 id: business._id,
                 business_name: business.businessName,
                 business_type: business.businessType,
-                business_model: business.businessModel, // Added
-                owner_name: business.contactPerson || business.userId?.name || 'N/A', // Mapped to owner_name
-                email: business.contactEmail || business.userId?.email || 'N/A', // Mapped to email
-                mobile: business.contactMobile || business.userId?.mobile || 'N/A', // Mapped to mobile
-                pan_number: business.pan, // Mapped to pan_number
-                gst_number: business.gst, // Mapped to gst_number
-                contact_person: business.contactPerson,
-                contact_email: business.contactEmail,
-                contact_mobile: business.contactMobile,
-                city: business.city,
-                state: business.state,
+                business_model: business.businessModel,
+                owner_name: business.accountHolderName || business.userId?.email?.split('@')[0] || 'N/A',
+                email: business.userId?.email || 'N/A',
+                mobile: business.userId?.mobile || 'N/A',
+                pan_number: 'N/A',
+                gst_number: 'N/A',
+                contact_person: business.accountHolderName || 'N/A',
+                contact_email: business.userId?.email || 'N/A',
+                contact_mobile: business.userId?.mobile || 'N/A',
                 approval_status: business.approvalStatus,
-                created_at: business.createdAt
+                user_business_id: business.userBusinessId,
+                created_at: business.createdAt,
+                recheck_comments: business.rejectionComments?.comments || business.rejectionComments?.reason || null
             }))
         });
     } catch (error) {
         console.error('Get businesses error:', error);
         res.status(500).json({
-            success: true, // Return success with empty list
+            success: true,
             businesses: []
         });
     }
@@ -440,6 +440,24 @@ exports.closeProject = async (req, res) => {
     }
 };
 
+exports.makeProjectLive = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) {
+            return res.status(404).json({ success: false, message: 'Project not found' });
+        }
+        if (project.status !== 'APPROVED') {
+            return res.status(400).json({ success: false, message: 'Only approved projects can be made live' });
+        }
+        project.status = 'LIVE';
+        project.liveAt = new Date();
+        await project.save();
+        res.json({ success: true, message: 'Project is now live and visible for investment', project: { id: project._id, status: project.status, liveAt: project.liveAt } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to make project live', error: error.message });
+    }
+};
+
 exports.getCustomers = async (req, res) => {
     try {
         const users = await User.find({ role: { $in: ['INVESTOR', 'BUSINESS_USER'] } })
@@ -549,11 +567,27 @@ exports.rejectKYC = async (req, res) => {
     }
 };
 
+const mapPlan = (p) => ({
+    id: p._id,
+    _id: p._id,
+    plan_name: p.name || p.plan_name || '',
+    name: p.name || p.plan_name || '',
+    price: p.price || 0,
+    validity_days: p.durationDays || p.validity_days || 0,
+    durationDays: p.durationDays || p.validity_days || 0,
+    max_projects: p.maxProjects || p.max_projects || 0,
+    features: Array.isArray(p.features) ? p.features : (p.features ? [p.features] : []),
+    is_active: p.isActive !== false,
+    isActive: p.isActive !== false,
+    created_at: p.createdAt,
+    updatedAt: p.updatedAt
+});
+
 exports.getPlans = async (req, res) => {
     try {
         const Plan = models.Plan;
         const plans = await Plan.find({}).sort({ createdAt: -1 });
-        res.json({ success: true, plans });
+        res.json({ success: true, plans: plans.map(mapPlan) });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get plans', error: error.message });
     }
@@ -562,9 +596,23 @@ exports.getPlans = async (req, res) => {
 exports.createPlan = async (req, res) => {
     try {
         const Plan = models.Plan;
-        const plan = new Plan(req.body);
+        const features = Array.isArray(req.body.features)
+            ? req.body.features
+            : typeof req.body.features === 'string'
+                ? req.body.features.split('\n').filter(f => f.trim())
+                : [];
+        const planData = {
+            name: req.body.plan_name || req.body.name || 'Unnamed Plan',
+            description: req.body.description || '',
+            price: parseFloat(req.body.price) || 0,
+            durationDays: parseInt(req.body.validity_days || req.body.durationDays) || 30,
+            maxProjects: parseInt(req.body.max_projects || req.body.maxProjects) || 0,
+            features,
+            isActive: req.body.is_active !== false
+        };
+        const plan = new Plan(planData);
         await plan.save();
-        res.json({ success: true, message: 'Plan created', plan });
+        res.json({ success: true, message: 'Plan created', plan: mapPlan(plan) });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to create plan', error: error.message });
     }
@@ -573,8 +621,22 @@ exports.createPlan = async (req, res) => {
 exports.updatePlan = async (req, res) => {
     try {
         const Plan = models.Plan;
-        const plan = await Plan.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json({ success: true, message: 'Plan updated', plan });
+        const features = Array.isArray(req.body.features)
+            ? req.body.features
+            : typeof req.body.features === 'string'
+                ? req.body.features.split('\n').filter(f => f.trim())
+                : undefined;
+        const planData = {
+            ...(req.body.plan_name || req.body.name ? { name: req.body.plan_name || req.body.name } : {}),
+            ...(req.body.price !== undefined ? { price: parseFloat(req.body.price) } : {}),
+            ...(req.body.validity_days || req.body.durationDays ? { durationDays: parseInt(req.body.validity_days || req.body.durationDays) } : {}),
+            ...(req.body.max_projects || req.body.maxProjects ? { maxProjects: parseInt(req.body.max_projects || req.body.maxProjects) } : {}),
+            ...(features !== undefined ? { features } : {}),
+            ...(req.body.description !== undefined ? { description: req.body.description } : {}),
+            updatedAt: new Date()
+        };
+        const plan = await Plan.findByIdAndUpdate(req.params.id, planData, { new: true });
+        res.json({ success: true, message: 'Plan updated', plan: plan ? mapPlan(plan) : null });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to update plan', error: error.message });
     }
@@ -590,10 +652,46 @@ exports.deletePlan = async (req, res) => {
     }
 };
 
+exports.getUserPlanSubscriptions = async (req, res) => {
+    try {
+        const UserPlan = models.UserPlan;
+        const now = new Date();
+        const filter = {};
+        if (req.query.status === 'ACTIVE') filter.isActive = true;
+        else if (req.query.status === 'EXPIRED') { filter.isActive = false; }
+
+        const subs = await UserPlan.find(filter)
+            .populate('userId', 'email mobile role')
+            .populate('planId', 'name price durationDays')
+            .sort({ activatedAt: -1 });
+
+        const subscriptions = subs.map(s => ({
+            id: s._id,
+            user_email: s.userId?.email || 'N/A',
+            user_mobile: s.userId?.mobile || 'N/A',
+            plan_name: s.planId?.name || 'N/A',
+            plan_price: s.planId?.price || 0,
+            activated_at: s.activatedAt,
+            expires_at: s.expiresAt,
+            is_active: s.isActive,
+            is_expired: s.expiresAt < now
+        }));
+
+        res.json({ success: true, subscriptions });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get user plan subscriptions', error: error.message });
+    }
+};
+
 exports.getSettings = async (req, res) => {
     try {
         const PlatformSetting = models.PlatformSetting;
-        const settings = await PlatformSetting.find({});
+        const settingsArray = await PlatformSetting.find({});
+        // Transform [{settingKey, settingValue}] array to flat object for frontend
+        const settings = {};
+        settingsArray.forEach(s => {
+            if (s.settingKey) settings[s.settingKey] = s.settingValue;
+        });
         res.json({ success: true, settings });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to get settings', error: error.message });
@@ -605,7 +703,13 @@ exports.updateSettings = async (req, res) => {
         const PlatformSetting = models.PlatformSetting;
         const updates = req.body;
         for (const key in updates) {
-            await PlatformSetting.findOneAndUpdate({ settingKey: key }, { settingValue: updates[key] }, { upsert: true });
+            if (updates[key] !== undefined && updates[key] !== null) {
+                await PlatformSetting.findOneAndUpdate(
+                    { settingKey: key },
+                    { settingKey: key, settingValue: String(updates[key]) },
+                    { upsert: true, new: true }
+                );
+            }
         }
         res.json({ success: true, message: 'Settings updated' });
     } catch (error) {

@@ -169,11 +169,8 @@ const ProjectApprovals = () => {
             else if (action === 'recheck') await adminAPI.recheckProject(id, { comments: comment });
             else if (action === 'reject') await adminAPI.rejectProject(id, { reason: comment });
             else if (action === 'close') await adminAPI.closeProject(id, { reason: comment });
-            else if (action === 'live') {
-                // Make project live after approval
-                await adminAPI.approveProject(id); // or a separate live endpoint
-            }
-            alert(`Project ${action}d successfully!`);
+            else if (action === 'live') await adminAPI.makeProjectLive(id);
+            alert(`Project ${action === 'live' ? 'made live' : action + 'd'} successfully!`);
             loadProjects();
         } catch (err) {
             alert('Action failed: ' + (err.response?.data?.message || err.message));

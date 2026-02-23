@@ -7,6 +7,9 @@ const Dashboard = () => {
         pendingApprovals: 0,
         activeProjects: 0,
         pendingPayments: 0,
+        totalUsers: 0,
+        liveProjects: 0,
+        pendingBusinesses: 0,
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -18,16 +21,16 @@ const Dashboard = () => {
     const loadStats = async () => {
         try {
             setLoading(true);
-            // TODO: Implement actual API calls when backend is ready
-            // const response = await adminAPI.getDashboardStats();
-            // setStats(response.data);
-
-            // For now, show zeros until backend is connected
+            const response = await adminAPI.getDashboardStats();
+            const data = response.data.stats || {};
             setStats({
-                totalBusinesses: 0,
-                pendingApprovals: 0,
-                activeProjects: 0,
+                totalBusinesses: data.businesses?.total || 0,
+                pendingApprovals: (data.businesses?.pending || 0) + (data.projects?.pending || 0),
+                activeProjects: data.projects?.live || 0,
                 pendingPayments: 0,
+                totalUsers: data.users?.total || 0,
+                liveProjects: data.projects?.live || 0,
+                pendingBusinesses: data.businesses?.pending || 0,
             });
         } catch (error) {
             console.error('Failed to load stats:', error);
@@ -43,31 +46,35 @@ const Dashboard = () => {
             value: stats.totalBusinesses,
             icon: '🏢',
             color: 'bg-blue-500',
+            link: '/businesses/active',
         },
         {
             title: 'Pending Approvals',
-            value: stats.pendingApprovals,
+            value: stats.pendingBusinesses,
             icon: '⏳',
             color: 'bg-yellow-500',
+            link: '/businesses/new',
         },
         {
-            title: 'Active Projects',
-            value: stats.activeProjects,
-            icon: '📊',
+            title: 'Live Projects',
+            value: stats.liveProjects,
+            icon: '🚀',
             color: 'bg-green-500',
+            link: '/projects/live',
         },
         {
-            title: 'Pending Payments',
-            value: stats.pendingPayments,
-            icon: '💰',
+            title: 'Total Users',
+            value: stats.totalUsers,
+            icon: '👥',
             color: 'bg-purple-500',
+            link: '/customers',
         },
     ];
 
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="text-xl text-gray-600">Loading dashboard...</div>
+                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -92,9 +99,10 @@ const Dashboard = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {statCards.map((stat, index) => (
-                    <div
+                    <a
                         key={index}
-                        className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-300"
+                        href={stat.link || '#'}
+                        className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-all duration-300 block"
                     >
                         <div className="flex items-center justify-between">
                             <div>
@@ -107,7 +115,7 @@ const Dashboard = () => {
                                 {stat.icon}
                             </div>
                         </div>
-                    </div>
+                    </a>
                 ))}
             </div>
 

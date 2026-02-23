@@ -5,7 +5,15 @@ const ScreenshotModal = ({ url, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4" onClick={onClose}>
         <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
             <button onClick={onClose} className="absolute -top-10 right-0 text-white text-3xl font-bold hover:text-gray-300">×</button>
-            <img src={url} alt="Payment Screenshot" className="w-full rounded-2xl shadow-2xl" />
+            <img
+                src={url}
+                alt="Payment Screenshot"
+                className="w-full rounded-2xl shadow-2xl bg-gray-100 min-h-[300px] object-cover"
+                onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/600x800.png?text=Image+Not+Found+or+Invalid+URL';
+                }}
+            />
         </div>
     </div>
 );
@@ -124,10 +132,10 @@ const PaymentRequests = () => {
                         key={tab.key}
                         onClick={() => setFilter(tab.key)}
                         className={`px-5 py-2 rounded-xl font-medium text-sm transition-all shadow-sm ${filter === tab.key
-                                ? tab.key === 'PENDING' ? 'bg-yellow-500 text-white shadow-md'
-                                    : tab.key === 'APPROVED' ? 'bg-green-600 text-white shadow-md'
-                                        : 'bg-red-600 text-white shadow-md'
-                                : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                            ? tab.key === 'PENDING' ? 'bg-yellow-500 text-white shadow-md'
+                                : tab.key === 'APPROVED' ? 'bg-green-600 text-white shadow-md'
+                                    : 'bg-red-600 text-white shadow-md'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
                             }`}
                     >
                         {tab.label}
@@ -179,8 +187,8 @@ const PaymentRequests = () => {
                                         <td className="px-4 py-3 text-lg font-bold text-green-600">₹{(req.amount || 0).toLocaleString()}</td>
                                         <td className="px-4 py-3">
                                             <span className={`text-xs px-3 py-1 rounded-full font-medium ${req.payment_method === 'UPI' ? 'bg-blue-100 text-blue-700' :
-                                                    req.payment_method === 'BANK' ? 'bg-purple-100 text-purple-700' :
-                                                        'bg-gray-100 text-gray-700'
+                                                req.payment_method === 'BANK' ? 'bg-purple-100 text-purple-700' :
+                                                    'bg-gray-100 text-gray-700'
                                                 }`}>
                                                 {req.payment_method === 'UPI' ? '💳 UPI' :
                                                     req.payment_method === 'BANK' ? '🏦 Bank' :
@@ -201,8 +209,8 @@ const PaymentRequests = () => {
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className={`text-xs px-3 py-1 rounded-full font-semibold ${req.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                                    req.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                                                        'bg-red-100 text-red-800'
+                                                req.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                                    'bg-red-100 text-red-800'
                                                 }`}>
                                                 {req.status}
                                             </span>

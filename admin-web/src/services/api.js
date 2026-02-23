@@ -90,12 +90,14 @@ export const adminAPI = {
     recheckProject: (id, data) => api.post(`/admin/projects/${id}/recheck`, data),
     rejectProject: (id, data) => api.post(`/admin/projects/${id}/reject`, data),
     closeProject: (id, data) => api.post(`/admin/projects/${id}/close`, data),
+    makeProjectLive: (id) => api.post(`/admin/projects/${id}/live`),
 
     // Plans
     getPlans: () => api.get('/admin/plans'),
     createPlan: (data) => api.post('/admin/plans', data),
     updatePlan: (id, data) => api.put(`/admin/plans/${id}`, data),
     deletePlan: (id) => api.delete(`/admin/plans/${id}`),
+    getUserPlanSubscriptions: (params) => api.get('/admin/plans/user-subscriptions', { params }),
 
     // Settings
     getSettings: () => api.get('/admin/settings'),
