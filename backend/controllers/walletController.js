@@ -664,9 +664,15 @@ exports.getAllTransactions = async (req, res) => {
  */
 exports.getAdminWallet = async (req, res) => {
     try {
-        const adminUser = await models.User.findById(req.user.id);
+        // Try to find the admin user — bypass accounts use hardcoded IDs not in DB,
+        // so fall back to email lookup or use data straight from the token.
+        let adminUser = await models.User.findById(req.user.id);
+        if (!adminUser && req.user.email) {
+            adminUser = await models.User.findOne({ email: req.user.email });
+        }
+        // If still not found (e.g. pure bypass/test admin), create a minimal object
         if (!adminUser) {
-            return res.status(404).json({ success: false, message: 'Admin user not found' });
+            adminUser = { _id: req.user.id, email: req.user.email };
         }
 
         // Compute balances from ledger entries on admin wallets
