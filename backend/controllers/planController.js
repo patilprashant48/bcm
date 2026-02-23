@@ -11,15 +11,14 @@ exports.getPlans = async (req, res) => {
         // Admin might see all, but this endpoint is public
         const plans = await models.Plan.find({ isActive: true }).sort({ price: 1 });
 
-        // Map to frontend expected format if needed, but schema seems aligned
-        // Frontend expects: id, plan_name, price, validity_days, max_projects, features
-        // Schema: planName, price, validityDays, maxProjects, features
+        // Map to frontend expected format
+        // Schema fields: name, price, durationDays, features, isActive
         const formattedPlans = plans.map(p => ({
             id: p._id,
-            plan_name: p.planName,
+            plan_name: p.name,
             price: p.price,
-            validity_days: p.validityDays,
-            max_projects: p.maxProjects,
+            validity_days: p.durationDays,
+            max_projects: p.maxProjects || 0,
             features: p.features,
             description: p.description
         }));
@@ -50,8 +49,8 @@ exports.activatePlan = async (req, res) => {
         // Check if user already has an active plan
         const currentPlan = await models.UserPlan.findOne({
             userId,
-            status: 'ACTIVE',
-            expiryDate: { $gt: new Date() }
+            isActive: true,
+            expiresAt: { $gt: new Date() }
         });
 
         if (currentPlan) {
@@ -73,48 +72,48 @@ exports.activatePlan = async (req, res) => {
         const debitRes = await ledgerService.debitWallet(
             walletRes.wallet._id,
             plan.price,
-            `Plan Activation: ${plan.planName}`,
-            REFERENCE_TYPES.SUBSCRIPTION || 'SUBSCRIPTION',
+            `Plan Activation: ${plan.name}`,
+            'PLAN_ACTIVATION',
             plan._id,
-            { plan_id: plan._id, validity: plan.validityDays },
-            userId // Admin ID usually here if admin action, but system action? Or user action. Usually null or passed user ID if user initiated?
-            // ledgerService expects adminId for audit. Let's pass userId as actor.
+            { plan_id: plan._id, validity: plan.durationDays },
+            userId
         );
 
         if (!debitRes.success) {
             return res.status(500).json({ success: false, message: 'Transaction failed', error: debitRes.error });
         }
 
-        // Credit Admin Wallet
-        const adminWalletRes = await ledgerService.getWallet(
-            // To get Admin wallet reliably, we could fetch an admin user or use a fixed constant if 1 admin.
-            // Using a simple workaround to find an admin.
-            await models.User.findOne({ role: 'SUPER_ADMIN' }).then(u => u ? u._id : userId),
-            'MAIN'
-        );
-        if (adminWalletRes.success) {
-            await ledgerService.creditWallet(
-                adminWalletRes.wallet._id,
-                plan.price,
-                `Plan Activation Received: ${plan.planName} by ${userId}`,
-                REFERENCE_TYPES.SUBSCRIPTION || 'SUBSCRIPTION',
-                plan._id,
-                { buyer_id: userId },
-                userId
-            );
+        // Credit Admin Wallet (non-blocking — don't fail activation if this errors)
+        try {
+            const adminUser = await models.User.findOne({ role: 'ADMIN' });
+            if (adminUser) {
+                const adminWalletRes = await ledgerService.getWallet(adminUser._id, 'ADMIN');
+                if (adminWalletRes.success) {
+                    await ledgerService.creditWallet(
+                        adminWalletRes.wallet._id,
+                        plan.price,
+                        `Plan Activation Received: ${plan.name} by ${userId}`,
+                        'PLAN_ACTIVATION',
+                        plan._id,
+                        { buyer_id: userId },
+                        userId
+                    );
+                }
+            }
+        } catch (adminCreditErr) {
+            console.error('Admin wallet credit failed (non-blocking):', adminCreditErr.message);
         }
 
         // Create UserPlan
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + plan.validityDays);
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + plan.durationDays);
 
         const userPlan = await models.UserPlan.create({
             userId,
             planId: plan._id,
-            startDate: new Date(),
-            expiryDate,
-            status: 'ACTIVE',
-            // paymentId? Maybe track transaction ID
+            activatedAt: new Date(),
+            expiresAt,
+            isActive: true
         });
 
         res.json({
@@ -138,8 +137,8 @@ exports.getActivePlan = async (req, res) => {
 
         const userPlan = await models.UserPlan.findOne({
             userId,
-            status: 'ACTIVE',
-            expiryDate: { $gt: new Date() }
+            isActive: true,
+            expiresAt: { $gt: new Date() }
         }).populate('planId');
 
         if (!userPlan) {
@@ -153,13 +152,11 @@ exports.getActivePlan = async (req, res) => {
             plan: {
                 user_plan_id: userPlan._id,
                 plan_id: plan._id,
-                plan_name: plan.planName,
+                plan_name: plan.name,
                 price: plan.price,
-                start_date: userPlan.startDate,
-                expiry_date: userPlan.expiryDate,
-                projects_remaining: plan.maxProjects, // Should track usage? For now static max.
-                // To track usage, we need to count projects created during plan period.
-                // Assuming simple static display for now.
+                start_date: userPlan.activatedAt,
+                expiry_date: userPlan.expiresAt,
+                projects_remaining: plan.maxProjects || 0,
                 features: plan.features
             }
         });

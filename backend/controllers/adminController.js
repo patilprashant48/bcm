@@ -225,9 +225,15 @@ exports.approveBusiness = async (req, res) => {
 
         business.approvalStatus = 'ACTIVE';
         if (!business.userBusinessId) {
-            // Generate simple ID
-            const count = await Business.countDocuments();
-            business.userBusinessId = `BCM-BUS-${(count + 1).toString().padStart(4, '0')}`;
+            // Generate unique ID based on max existing ID (not count, to avoid collisions)
+            const lastBusiness = await Business.findOne(
+                { userBusinessId: { $exists: true, $ne: null } },
+                { userBusinessId: 1 }
+            ).sort({ userBusinessId: -1 });
+            const lastNum = lastBusiness?.userBusinessId
+                ? parseInt(lastBusiness.userBusinessId.replace('BCM-BUS-', ''), 10) || 0
+                : 0;
+            business.userBusinessId = `BCM-BUS-${(lastNum + 1).toString().padStart(4, '0')}`;
         }
         business.updatedAt = new Date();
         await business.save();
