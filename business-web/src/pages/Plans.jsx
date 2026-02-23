@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { planAPI } from '../services/api';
+import { planAPI, walletAPI } from '../services/api';
 
 const Plans = () => {
     const [plans, setPlans] = useState([]);
@@ -7,6 +7,8 @@ const Plans = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
+    const [activating, setActivating] = useState(false);
+    const [walletBalance, setWalletBalance] = useState(null);
 
     useEffect(() => {
         loadPlans();
@@ -14,12 +16,14 @@ const Plans = () => {
 
     const loadPlans = async () => {
         try {
-            const [plansRes, activePlanRes] = await Promise.all([
+            const [plansRes, activePlanRes, walletRes] = await Promise.all([
                 planAPI.getPlans(),
                 planAPI.getActivePlan().catch(() => ({ data: null })),
+                walletAPI.getBusinessBalance().catch(() => ({ data: null })),
             ]);
             setPlans(plansRes.data.plans || []);
-            setActivePlan(activePlanRes.data);
+            setActivePlan(activePlanRes.data?.plan || activePlanRes.data || null);
+            setWalletBalance(walletRes.data?.balance ?? null);
         } catch (error) {
             console.error('Failed to load plans:', error);
         } finally {
@@ -28,13 +32,17 @@ const Plans = () => {
     };
 
     const handleActivatePlan = async (planId) => {
+        setActivating(true);
         try {
             await planAPI.activatePlan(planId, {});
             alert('Plan activated successfully!');
             setShowModal(false);
             loadPlans();
         } catch (error) {
-            alert('Failed to activate plan. Please try again.');
+            const msg = error.response?.data?.message || error.message || 'Failed to activate plan. Please try again.';
+            alert(msg);
+        } finally {
+            setActivating(false);
         }
     };
 
@@ -121,10 +129,20 @@ const Plans = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">Activate Plan</h2>
-                        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
                             <h3 className="font-bold text-lg mb-2">{selectedPlan.plan_name}</h3>
                             <p className="text-3xl font-bold text-blue-600 mb-2">₹{selectedPlan.price.toLocaleString()}</p>
                             <p className="text-sm text-gray-600">Valid for {selectedPlan.validity_days} days</p>
+                        </div>
+                        {/* Wallet balance info */}
+                        <div className={`rounded-lg p-3 mb-4 text-sm ${walletBalance !== null && walletBalance < selectedPlan.price ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
+                            <span className="font-medium">Your Wallet Balance: </span>
+                            <span className={`font-bold ${walletBalance !== null && walletBalance < selectedPlan.price ? 'text-red-600' : 'text-green-700'}`}>
+                                ₹{(walletBalance ?? 0).toLocaleString()}
+                            </span>
+                            {walletBalance !== null && walletBalance < selectedPlan.price && (
+                                <p className="text-red-600 mt-1">⚠ Insufficient balance. Please top up your wallet first.</p>
+                            )}
                         </div>
                         <p className="text-sm text-gray-600 mb-6">
                             By activating this plan, you'll be able to create up to {selectedPlan.max_projects} projects.
@@ -132,12 +150,14 @@ const Plans = () => {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => handleActivatePlan(selectedPlan.id)}
-                                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-medium"
+                                disabled={activating || (walletBalance !== null && walletBalance < selectedPlan.price)}
+                                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 rounded-lg transition font-medium"
                             >
-                                Confirm & Pay
+                                {activating ? 'Processing...' : 'Confirm & Pay'}
                             </button>
                             <button
                                 onClick={() => setShowModal(false)}
+                                disabled={activating}
                                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg transition font-medium"
                             >
                                 Cancel

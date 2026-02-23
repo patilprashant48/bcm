@@ -49,6 +49,7 @@ export const projectAPI = {
 
 export const walletAPI = {
     getWallet: () => api.get('/wallet'),
+    getBusinessBalance: () => api.get('/wallet/BUSINESS/balance'),
     requestTopUp: (data) => api.post('/wallet/topup-request', data),
     getTransactions: (params) => api.get('/wallet/transactions', { params }),
     getPaymentDetails: () => api.get('/wallet/payment-details'),
