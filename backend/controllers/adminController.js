@@ -20,6 +20,15 @@ exports.getProjects = async (req, res) => {
             .sort({ createdAt: -1 })
             .select('-__v');
 
+        // Batch-fetch business names
+        const userIds = projects.map(p => p.userId?._id).filter(Boolean);
+        const profiles = await models.BusinessProfile.find(
+            { userId: { $in: userIds } },
+            'userId businessName'
+        ).lean();
+        const nameMap = {};
+        for (const bp of profiles) nameMap[bp.userId.toString()] = bp.businessName;
+
         res.json({
             success: true,
             projects: projects.map(project => ({
@@ -32,7 +41,12 @@ exports.getProjects = async (req, res) => {
                 project_cost: project.projectCost,
                 location: project.location,
                 start_date: project.startDate,
+                expected_roi: project.expectedRoi,
+                duration_months: project.durationMonths,
+                business_plan: project.businessPlan,
+                risk_factors: project.riskFactors,
                 status: project.status,
+                business_name: nameMap[project.userId?._id?.toString()] || null,
                 business_email: project.userId?.email,
                 business_mobile: project.userId?.mobile,
                 created_at: project.createdAt,
@@ -65,18 +79,20 @@ exports.approveProject = async (req, res) => {
             });
         }
 
-        project.status = 'APPROVED';
+        project.status = 'LIVE';
         project.approvedAt = new Date();
+        project.liveAt = new Date();
         await project.save();
 
         res.json({
             success: true,
-            message: 'Project approved successfully',
+            message: 'Project approved and is now Live — visible for investment',
             project: {
                 id: project._id,
                 project_name: project.projectName,
                 status: project.status,
-                approved_at: project.approvedAt
+                approved_at: project.approvedAt,
+                live_at: project.liveAt
             }
         });
     } catch (error) {
