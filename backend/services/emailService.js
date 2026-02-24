@@ -3,14 +3,21 @@ require('dotenv').config();
 
 /**
  * Email Service for sending notifications
- * Can use Supabase email or SMTP
+ * Emails are ONLY sent when EMAIL_ENABLED=true in environment variables.
+ * Set EMAIL_ENABLED=true + SMTP_USER + SMTP_PASS to enable real sending.
+ * Default (no env vars): all emails are logged to console only.
  */
 
 class EmailService {
     constructor() {
-        // Initialize SMTP transporter if configured
-        // SMTP Disabled by user request
-        if (false && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        // Only initialise transporter when explicitly enabled via env var.
+        // Never send email unless EMAIL_ENABLED=true is set.
+        const enabled =
+            process.env.EMAIL_ENABLED === 'true' &&
+            process.env.SMTP_USER &&
+            process.env.SMTP_PASS;
+
+        if (enabled) {
             this.transporter = nodemailer.createTransporter({
                 host: process.env.SMTP_HOST || 'smtp.gmail.com',
                 port: parseInt(process.env.SMTP_PORT) || 587,
@@ -20,16 +27,23 @@ class EmailService {
                     pass: process.env.SMTP_PASS
                 }
             });
+            console.log('Email service: SMTP transport initialised.');
         } else {
-            console.warn('SMTP not configured. Emails will be logged to console.');
             this.transporter = null;
+            console.log('Email service: EMAIL_ENABLED is not true — all emails will be logged only.');
         }
     }
 
     /**
-     * Send email (or log if SMTP not configured)
+     * Send email (or log if EMAIL_ENABLED != true)
      */
     async sendEmail(to, subject, html) {
+        // Global kill-switch: if EMAIL_ENABLED is not explicitly "true", never send.
+        if (process.env.EMAIL_ENABLED !== 'true') {
+            console.log('[EMAIL BLOCKED - EMAIL_ENABLED not set] To:', to, '| Subject:', subject);
+            return { success: true, logged: true };
+        }
+
         try {
             if (this.transporter) {
                 const info = await this.transporter.sendMail({
@@ -41,12 +55,7 @@ class EmailService {
                 console.log('Email sent:', info.messageId);
                 return { success: true, messageId: info.messageId };
             } else {
-                // Log email to console for development
-                console.log('=== EMAIL (Not Sent - SMTP Not Configured) ===');
-                console.log('To:', to);
-                console.log('Subject:', subject);
-                console.log('Body:', html);
-                console.log('==============================================');
+                console.log('[EMAIL LOG - no transporter] To:', to, '| Subject:', subject);
                 return { success: true, logged: true };
             }
         } catch (error) {
