@@ -37,7 +37,7 @@ const ViewModal = ({ scheme, onClose }) => {
                         <h2 className="text-xl font-bold text-white">{scheme.name}</h2>
                         <p className="text-blue-100 text-sm font-mono mt-1">ID: {scheme.schemeId}</p>
                     </div>
-                    <button onClick={onClose} className="text-white hover:text-blue-200 text-2xl leading-none">Ã—</button>
+                    <button onClick={onClose} className="text-white hover:text-blue-200 text-2xl leading-none">&#x2715;</button>
                 </div>
                 <div className="p-6 space-y-1">
                     {row('Minimum Amount', `Rs.${(scheme.minAmount || 0).toLocaleString()}`)}
@@ -166,7 +166,7 @@ const CreateModal = ({ onClose, onCreated }) => {
                         <h2 className="text-xl font-bold text-white">Create FDS Scheme</h2>
                         <p className="text-blue-100 text-sm">Scheme ID will be auto-generated</p>
                     </div>
-                    <button onClick={onClose} className="text-white hover:text-blue-200 text-2xl leading-none">Ã—</button>
+                    <button onClick={onClose} className="text-white hover:text-blue-200 text-2xl leading-none">&#x2715;</button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
