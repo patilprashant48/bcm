@@ -5,7 +5,7 @@ import { useState } from 'react';
 const Layout = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
-    const [expandedSections, setExpandedSections] = useState(['business', 'wallet', 'fds']);
+    const [expandedSections, setExpandedSections] = useState(['business', 'wallet', 'capital']);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     const toggleSection = (section) => {
@@ -52,14 +52,6 @@ const Layout = () => {
             ]
         },
         {
-            id: 'fds',
-            title: 'FDS',
-            icon: '🏦',
-            items: [
-                { name: 'Scheme Master', path: '/fds/schemes', icon: '📋' },
-            ]
-        },
-        {
             id: 'capital',
             title: 'Capital Tools',
             icon: '💼',
@@ -67,6 +59,7 @@ const Layout = () => {
                 { name: 'Shares', path: '/capital/shares', icon: '📈' },
                 { name: 'Loans', path: '/capital/loans', icon: '💵' },
                 { name: 'Fixed Deposits', path: '/capital/fds', icon: '🏦' },
+                { name: 'Scheme Master', path: '/fds/schemes', icon: '📋' },
                 { name: 'Partnerships', path: '/capital/partnerships', icon: '🤝' },
             ]
         },
