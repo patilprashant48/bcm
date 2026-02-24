@@ -326,10 +326,6 @@ const SchemeMaster = () => {
         taxDeductionPercent: ''
     });
 
-    useEffect(() => {
-        loadSchemes();
-    }, []);
-
     const loadSchemes = async () => {
         try {
             setLoading(true);
@@ -341,6 +337,10 @@ const SchemeMaster = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadSchemes();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -420,20 +420,6 @@ const SchemeMaster = () => {
             setSubmitting(false);
         }
     };
-
-    const loadSchemes = async () => {
-        try {
-            setLoading(true);
-            const res = await fdsAPI.getSchemes();
-            setSchemes(res.data.schemes || []);
-        } catch (err) {
-            console.error('Failed to load schemes', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { loadSchemes(); }, []);
 
     const handleToggle = async (id, field, newValue) => {
         setToggling(t => ({ ...t, [`${id}_${field}`]: true }));
