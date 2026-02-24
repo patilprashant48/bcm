@@ -40,7 +40,7 @@ const ViewModal = ({ scheme, onClose }) => {
                     <button onClick={onClose} className="text-white hover:text-blue-200 text-2xl leading-none">Ã—</button>
                 </div>
                 <div className="p-6 space-y-1">
-                    {row('Minimum Amount', `â‚¹${(scheme.minAmount || 0).toLocaleString()}`)}
+                    {row('Minimum Amount', `Rs.${(scheme.minAmount || 0).toLocaleString()}`)}
                     {row('Interest Rate', `${scheme.interestPercent ?? 0}%`)}
                     {row('Interest Calc Days', `${scheme.interestCalculationDays} days`)}
                     {row('Transfer Schedule', `Day ${scheme.transferScheduleDays}`)}
@@ -71,7 +71,7 @@ const ViewModal = ({ scheme, onClose }) => {
                     </div>
 
                     <div className="pt-3">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">After Maturity â€” Main Amount Transfer</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">After Maturity - Main Amount Transfer</p>
                         <div className="grid grid-cols-2 gap-2">
                             {[['Main Wallet', scheme.maturityTransferDivision?.mainWallet], ['Income Wallet', scheme.maturityTransferDivision?.incomeWallet]].map(([l, v]) => (
                                 <div key={l} className="bg-green-50 rounded-lg p-2 text-center">
@@ -146,7 +146,7 @@ const CreateModal = ({ onClose, onCreated }) => {
                 maturityTransferDivision: form.maturityTransferDivision,
                 taxDeductionPercent: parseFloat(form.taxDeductionPercent) || 0,
             });
-            setFeedback({ type: 'success', msg: 'âœ“ Scheme created successfully!' });
+            setFeedback({ type: 'success', msg: 'Scheme created successfully!' });
             onCreated();
             setTimeout(onClose, 1200);
         } catch (err) {
@@ -179,7 +179,7 @@ const CreateModal = ({ onClose, onCreated }) => {
                     {/* 2. Min Amount + Interest Rate */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className={lbl}>2. Minimum Amount (â‚¹)</label>
+                            <label className={lbl}>2. Minimum Amount (Rs.)</label>
                             <input type="number" min="0" required value={form.minAmount} onChange={e => set('minAmount', e.target.value)} placeholder="10000" className={inp} />
                         </div>
                         <div>
@@ -227,7 +227,7 @@ const CreateModal = ({ onClose, onCreated }) => {
                         <div className="flex justify-between items-center mb-3">
                             <label className="text-sm font-semibold text-gray-700">5. Interest Division (%)</label>
                             <span className={`text-xs font-bold px-2 py-1 rounded-full ${Math.abs(intDivTotal - 100) < 0.01 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                Total: {intDivTotal.toFixed(1)}% {Math.abs(intDivTotal - 100) < 0.01 ? 'âœ“' : 'â€” must be 100%'}
+                                Total: {intDivTotal.toFixed(1)}% {Math.abs(intDivTotal - 100) < 0.01 ? '✓ OK' : '✗ must be 100%'}
                             </span>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
@@ -251,9 +251,9 @@ const CreateModal = ({ onClose, onCreated }) => {
                     {/* 9. After Maturity Transfer */}
                     <div className="bg-green-50 rounded-xl p-4">
                         <div className="flex justify-between items-center mb-3">
-                            <label className="text-sm font-semibold text-gray-700">9. After Maturity â€” Main Amount Transfer (%)</label>
+                            <label className="text-sm font-semibold text-gray-700">9. After Maturity - Main Amount Transfer (%)</label>
                             <span className={`text-xs font-bold px-2 py-1 rounded-full ${Math.abs(matDivTotal - 100) < 0.01 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                Total: {matDivTotal.toFixed(1)}% {Math.abs(matDivTotal - 100) < 0.01 ? 'âœ“' : 'â€” must be 100%'}
+                                Total: {matDivTotal.toFixed(1)}% {Math.abs(matDivTotal - 100) < 0.01 ? '✓ OK' : '✗ must be 100%'}
                             </span>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -296,7 +296,7 @@ const CreateModal = ({ onClose, onCreated }) => {
                             Cancel
                         </button>
                         <button type="submit" disabled={submitting} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition disabled:opacity-50 shadow-sm">
-                            {submitting ? 'Creatingâ€¦' : 'âœ“ Create Scheme'}
+                            {submitting ? 'Creating...' : 'Create Scheme'}
                         </button>
                     </div>
                 </form>
@@ -441,7 +441,7 @@ const SchemeMaster = () => {
             {/* Page Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">FDS â€” Scheme Master</h1>
+                    <h1 className="text-3xl font-bold text-gray-800">FDS - Scheme Master</h1>
                     <p className="text-gray-500 mt-1">Manage Fixed Deposit Schemes</p>
                 </div>
                 <button
@@ -459,7 +459,7 @@ const SchemeMaster = () => {
                 </div>
             ) : schemes.length === 0 ? (
                 <div className="bg-white rounded-2xl shadow-md p-16 text-center">
-                    <div className="text-7xl mb-4">ðŸ“‹</div>
+                    <div className="text-7xl mb-4">📋</div>
                     <p className="text-xl text-gray-600 font-medium">No schemes yet</p>
                     <p className="text-gray-400 mt-1">Click "New Scheme" to create your first FDS scheme</p>
                 </div>
@@ -479,7 +479,7 @@ const SchemeMaster = () => {
                                     <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
                                     <td className="px-4 py-3 text-xs font-mono text-blue-700 font-semibold whitespace-nowrap">{s.schemeId}</td>
                                     <td className="px-4 py-3 text-sm font-bold text-gray-900">{s.name}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700 font-medium">â‚¹{(s.minAmount || 0).toLocaleString()}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-700 font-medium">Rs.{(s.minAmount || 0).toLocaleString()}</td>
                                     <td className="px-4 py-3 text-sm text-blue-600 font-semibold">{s.interestPercent ?? 0}%</td>
                                     <td className="px-4 py-3 text-sm text-gray-700">{s.maturityDays} days</td>
                                     <td className="px-4 py-3 text-sm text-orange-600 font-medium">{s.taxDeductionPercent ?? 0}%</td>
@@ -491,7 +491,7 @@ const SchemeMaster = () => {
                                             title={s.isActive ? 'Click to Deactivate' : 'Click to Activate'}
                                             className={`px-3 py-1 rounded-full text-xs font-bold transition-all disabled:opacity-60 ${s.isActive ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700' : 'bg-red-100 text-red-700 hover:bg-green-100 hover:text-green-700'}`}
                                         >
-                                            {toggling[`${s._id}_isActive`] ? 'â€¦' : s.isActive ? 'ACTIVE' : 'INACTIVE'}
+                                            {toggling[`${s._id}_isActive`] ? '...' : s.isActive ? 'ACTIVE' : 'INACTIVE'}
                                         </button>
                                     </td>
 
@@ -502,7 +502,7 @@ const SchemeMaster = () => {
                                             title={s.isPublished ? 'Click to Unpublish' : 'Click to Publish'}
                                             className={`px-3 py-1 rounded-full text-xs font-bold transition-all disabled:opacity-60 ${s.isPublished ? 'bg-blue-100 text-blue-700 hover:bg-gray-100 hover:text-gray-700' : 'bg-gray-200 text-gray-600 hover:bg-blue-100 hover:text-blue-700'}`}
                                         >
-                                            {toggling[`${s._id}_isPublished`] ? 'â€¦' : s.isPublished ? 'PUBLISHED' : 'UNPUBLISHED'}
+                                            {toggling[`${s._id}_isPublished`] ? '...' : s.isPublished ? 'PUBLISHED' : 'UNPUBLISHED'}
                                         </button>
                                     </td>
 
@@ -511,7 +511,7 @@ const SchemeMaster = () => {
                                             onClick={() => setViewScheme(s)}
                                             className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-lg font-medium transition shadow-sm"
                                         >
-                                            ðŸ‘ View
+                                            View
                                         </button>
                                     </td>
                                 </tr>
@@ -522,7 +522,7 @@ const SchemeMaster = () => {
             )}
 
             <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800">
-                âš  Schemes <strong>cannot be edited or deleted</strong> once created. Use Active / Published toggles to control visibility.
+                Note: Schemes <strong>cannot be edited or deleted</strong> once created. Use Active / Published toggles to control visibility.
             </div>
         </div>
     );
