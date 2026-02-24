@@ -5,7 +5,7 @@ import { useState } from 'react';
 const Layout = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
-    const [expandedSections, setExpandedSections] = useState(['business', 'wallet']);
+    const [expandedSections, setExpandedSections] = useState(['business', 'wallet', 'fds']);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     const toggleSection = (section) => {
