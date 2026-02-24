@@ -227,7 +227,7 @@ const CreateModal = ({ onClose, onCreated }) => {
                         <div className="flex justify-between items-center mb-3">
                             <label className="text-sm font-semibold text-gray-700">5. Interest Division (%)</label>
                             <span className={`text-xs font-bold px-2 py-1 rounded-full ${Math.abs(intDivTotal - 100) < 0.01 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                Total: {intDivTotal.toFixed(1)}% {Math.abs(intDivTotal - 100) < 0.01 ? '✓ OK' : '✗ must be 100%'}
+                                Total: {intDivTotal.toFixed(1)}% {Math.abs(intDivTotal - 100) < 0.01 ? 'OK' : 'must be 100%'}
                             </span>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
@@ -253,7 +253,7 @@ const CreateModal = ({ onClose, onCreated }) => {
                         <div className="flex justify-between items-center mb-3">
                             <label className="text-sm font-semibold text-gray-700">9. After Maturity - Main Amount Transfer (%)</label>
                             <span className={`text-xs font-bold px-2 py-1 rounded-full ${Math.abs(matDivTotal - 100) < 0.01 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                Total: {matDivTotal.toFixed(1)}% {Math.abs(matDivTotal - 100) < 0.01 ? '✓ OK' : '✗ must be 100%'}
+                                Total: {matDivTotal.toFixed(1)}% {Math.abs(matDivTotal - 100) < 0.01 ? 'OK' : 'must be 100%'}
                             </span>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
