@@ -421,8 +421,6 @@ const SchemeMaster = () => {
         }
     };
 
-    useEffect(() => { loadSchemes(); }, []);
-
     const loadSchemes = async () => {
         try {
             setLoading(true);
@@ -434,6 +432,8 @@ const SchemeMaster = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => { loadSchemes(); }, []);
 
     const handleToggle = async (id, field, newValue) => {
         setToggling(t => ({ ...t, [`${id}_${field}`]: true }));
